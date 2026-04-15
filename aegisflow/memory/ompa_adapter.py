@@ -8,6 +8,7 @@ ensuring that agents can maintain persistent context across sessions.
 import os
 from typing import Dict, List, Optional, Any
 
+
 class MemoryVault:
     """
     A persistent, human-navigable memory vault.
@@ -26,14 +27,15 @@ class MemoryVault:
 
     def store_verbatim(self, content: str, category: str = "work", filename: str = "notes.md") -> None:
         """Stores unsummarized, verbatim context into the vault."""
-        filepath = os.path.join(self.path, category, filename)
+        cat_path = os.path.join(self.path, category)
+        os.makedirs(cat_path, exist_ok=True)
+        filepath = os.path.join(cat_path, filename)
         mode = "a" if os.path.exists(filepath) else "w"
         with open(filepath, mode) as f:
-            f.write(f"\\n---\\n{content}\\n")
+            f.write(f"\n---\n{content}\n")
 
     def retrieve(self, query: str) -> List[str]:
         """Placeholder for semantic search across the vault."""
-        # In a full implementation, this would use local sentence-transformers
         return [f"Mock retrieval result for: {query}"]
 
 
@@ -46,7 +48,8 @@ class KnowledgeGraph:
         self.db_path = db_path
         self.triples: List[Dict[str, str]] = []
 
-    def add_triple(self, subject: str, predicate: str, object_val: str, valid_from: Optional[str] = None) -> None:
+    def add_triple(self, subject: str, predicate: str, object_val: str,
+                   valid_from: Optional[str] = None) -> None:
         """Add a temporal fact to the graph."""
         self.triples.append({
             "subject": subject,
@@ -59,10 +62,12 @@ class KnowledgeGraph:
         """Query the graph for relationships involving an entity."""
         return [t for t in self.triples if t["subject"] == entity or t["object"] == entity]
 
+
 class PalaceNavigation:
     """
     Agent-accessible spatial navigation system (Wings -> Rooms -> Drawers).
     """
+
     def __init__(self, vault: MemoryVault):
         self.vault = vault
         self.wings: Dict[str, Any] = {}

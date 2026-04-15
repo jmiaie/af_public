@@ -1,0 +1,41 @@
+{
+  "system": {
+    "python": "3.12.3",
+    "cpu": 4,
+    "ram_total_gb": 8.0,
+    "ram_avail_gb": 6.7
+  },
+  "llm_complete": {
+    "time_s": 0.668,
+    "tokens": 10,
+    "text": "Paris is the capital city of France."
+  },
+  "vault_write_500": {
+    "total_s": 0.07,
+    "per_sec": 7120.0
+  },
+  "knowledge_graph": {
+    "1000_add_s": 0.0011,
+    "100_q_s": 0.0072,
+    "adds_per_sec": 918884.0
+  },
+  "sandbox_write_200": {
+    "total_s": 0.024,
+    "per_sec": 8291.0
+  },
+  "sandbox_exec_1": {
+    "time_s": 0.0369
+  },
+  "orchestrator_1run": {
+    "time_s": 28.15,
+    "subtasks": 2,
+    "agents": 2,
+    "status": "success"
+  },
+  "full_swarm_timing": {
+    "decompose_s": 5.368,
+    "3agents_s": 29.814,
+    "synthesis_s": 3.797,
+    "total_s": 38.978
+  }
+}
