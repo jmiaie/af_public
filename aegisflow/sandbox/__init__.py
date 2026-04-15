@@ -1,3 +1,3 @@
-from .environment import Sandbox
+from .environment import LocalSandbox, DockerSandbox, Sandbox as SandboxAlias, SandboxResult
 
-__all__ = ["Sandbox"]
+__all__ = ["LocalSandbox", "DockerSandbox", "SandboxAlias", "SandboxResult"]
