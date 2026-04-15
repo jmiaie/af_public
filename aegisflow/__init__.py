@@ -18,6 +18,12 @@ from aegisflow.llm import (
     AgenticResponse,
     SubAgentResult,
 )
+from aegisflow.analytics import (
+    ToolCategory,
+    categorize_tool,
+    SessionAnalyzer,
+    render_analytics_summary,
+)
 
 __version__ = "0.2.0"
 
@@ -39,4 +45,9 @@ __all__ = [
     "OpenClawSession",
     "AgenticResponse",
     "SubAgentResult",
+    # Analytics
+    "ToolCategory",
+    "categorize_tool",
+    "SessionAnalyzer",
+    "render_analytics_summary",
 ]
