@@ -24,6 +24,16 @@ from aegisflow.analytics import (
     SessionAnalyzer,
     render_analytics_summary,
 )
+from aegisflow.brain import (
+    BrainFirstLookup,
+    BrainLookupResult,
+    brain_first,
+    SignalDetector,
+    SignalSummary,
+    BrainDoctor,
+    BrainHealthReport,
+    run_doctor,
+)
 
 __version__ = "0.2.0"
 
@@ -50,4 +60,13 @@ __all__ = [
     "categorize_tool",
     "SessionAnalyzer",
     "render_analytics_summary",
+    # Brain (GBrain port)
+    "BrainFirstLookup",
+    "BrainLookupResult",
+    "brain_first",
+    "SignalDetector",
+    "SignalSummary",
+    "BrainDoctor",
+    "BrainHealthReport",
+    "run_doctor",
 ]
