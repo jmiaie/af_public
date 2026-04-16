@@ -32,11 +32,17 @@ class LocalSandbox:
     def __init__(self, workspace_path: str = "./sandbox_workspace"):
         self.workspace = os.path.abspath(workspace_path)
         self.isolation_level = "local"
+        # Perf §5.1: cache ensured parent dirs so write_file doesn't re-stat
+        # the full path on every call.
+        self._known_dirs: set = set()
         self._ensure_directories()
 
     def _ensure_directories(self) -> None:
         for d in ["workspace", "uploads", "outputs", "logs"]:
-            os.makedirs(os.path.join(self.workspace, d), exist_ok=True)
+            path = os.path.join(self.workspace, d)
+            os.makedirs(path, exist_ok=True)
+            self._known_dirs.add(path)
+        self._known_dirs.add(self.workspace)
 
     def _resolve_path(self, relative_path: str) -> str:
         target = os.path.abspath(os.path.join(self.workspace, relative_path))
@@ -46,7 +52,11 @@ class LocalSandbox:
 
     def write_file(self, relative_path: str, content: str) -> str:
         safe_path = self._resolve_path(relative_path)
-        os.makedirs(os.path.dirname(safe_path), exist_ok=True)
+        # Perf §5.1: skip makedirs when we've already materialized the parent.
+        parent = os.path.dirname(safe_path)
+        if parent not in self._known_dirs:
+            os.makedirs(parent, exist_ok=True)
+            self._known_dirs.add(parent)
         with open(safe_path, "w") as f:
             f.write(content)
         return safe_path

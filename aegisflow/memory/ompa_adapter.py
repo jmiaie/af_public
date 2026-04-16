@@ -17,21 +17,29 @@ class MemoryVault:
 
     def __init__(self, path: str = "./vault"):
         self.path = path
+        # Perf §5.1: cache directories we've already ensured to skip repeat
+        # makedirs syscalls on the write hot path.
+        self._known_dirs: set[str] = set()
         self._ensure_structure()
 
     def _ensure_structure(self) -> None:
         """Ensure the basic vault structure exists."""
         folders = ["brain", "work", "org", "perf"]
         for folder in folders:
-            os.makedirs(os.path.join(self.path, folder), exist_ok=True)
+            d = os.path.join(self.path, folder)
+            os.makedirs(d, exist_ok=True)
+            self._known_dirs.add(d)
 
     def store_verbatim(self, content: str, category: str = "work", filename: str = "notes.md") -> None:
         """Stores unsummarized, verbatim context into the vault."""
+        # Perf §5.1: only call makedirs when the target dir is new to this instance.
         cat_path = os.path.join(self.path, category)
-        os.makedirs(cat_path, exist_ok=True)
+        if cat_path not in self._known_dirs:
+            os.makedirs(cat_path, exist_ok=True)
+            self._known_dirs.add(cat_path)
         filepath = os.path.join(cat_path, filename)
-        mode = "a" if os.path.exists(filepath) else "w"
-        with open(filepath, mode) as f:
+        # Perf §5.2: "a" mode creates the file if missing — no need to stat first.
+        with open(filepath, "a") as f:
             f.write(f"\n---\n{content}\n")
 
     def retrieve(self, query: str) -> List[str]:
@@ -47,20 +55,38 @@ class KnowledgeGraph:
     def __init__(self, db_path: str = "./vault/kg.sqlite"):
         self.db_path = db_path
         self.triples: List[Dict[str, str]] = []
+        # Perf §5.3: dict indices turn query_entity from O(n) to O(1 + k).
+        self._by_subject: Dict[str, List[Dict[str, str]]] = {}
+        self._by_object: Dict[str, List[Dict[str, str]]] = {}
 
     def add_triple(self, subject: str, predicate: str, object_val: str,
                    valid_from: Optional[str] = None) -> None:
         """Add a temporal fact to the graph."""
-        self.triples.append({
+        triple = {
             "subject": subject,
             "predicate": predicate,
             "object": object_val,
-            "valid_from": valid_from or "now"
-        })
+            "valid_from": valid_from or "now",
+        }
+        self.triples.append(triple)
+        self._by_subject.setdefault(subject, []).append(triple)
+        self._by_object.setdefault(object_val, []).append(triple)
 
     def query_entity(self, entity: str) -> List[Dict[str, str]]:
-        """Query the graph for relationships involving an entity."""
-        return [t for t in self.triples if t["subject"] == entity or t["object"] == entity]
+        """Query the graph for relationships involving an entity.
+
+        Returns triples where `entity` is either the subject or the object.
+        Deduplicates the case where subject == object.
+        """
+        subj_hits = self._by_subject.get(entity, [])
+        obj_hits = self._by_object.get(entity, [])
+        if not obj_hits:
+            return list(subj_hits)
+        if not subj_hits:
+            return list(obj_hits)
+        # Merge and deduplicate (preserves insertion order).
+        seen_ids = {id(t) for t in subj_hits}
+        return subj_hits + [t for t in obj_hits if id(t) not in seen_ids]
 
 
 class PalaceNavigation:

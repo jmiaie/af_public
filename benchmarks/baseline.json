@@ -1,0 +1,100 @@
+{
+  "_meta": {
+    "generated_at": "2026-04-15 23:20:59",
+    "system": {
+      "python": "3.14.4",
+      "platform": "Windows-11-10.0.26100-SP0",
+      "machine": "AMD64",
+      "cpu_logical": 16,
+      "cpu_physical": 8,
+      "ram_total_gb": 31.7,
+      "ram_avail_gb": 4.1
+    },
+    "suite": "aegisflow.benchmarks.bench_core"
+  },
+  "startup": {
+    "samples": 20,
+    "mean_ms": 6.8735,
+    "median_ms": 3.7755,
+    "p95_ms": 42.1595,
+    "p99_ms": 42.1595,
+    "min_ms": 2.5125,
+    "max_ms": 42.1595,
+    "stdev_ms": 9.2697
+  },
+  "vault_writes": {
+    "operations": 2000,
+    "total_seconds": 0.872,
+    "ops_per_sec": 2293.0,
+    "samples": 2000,
+    "mean_ms": 0.4362,
+    "median_ms": 0.354,
+    "p95_ms": 0.8066,
+    "p99_ms": 1.1479,
+    "min_ms": 0.2924,
+    "max_ms": 2.3987,
+    "stdev_ms": 0.1897
+  },
+  "knowledge_graph": {
+    "add": {
+      "operations": 10000,
+      "total_seconds": 0.012,
+      "ops_per_sec": 821639.0,
+      "samples": 10000,
+      "mean_ms": 0.0012,
+      "median_ms": 0.001,
+      "p95_ms": 0.0029,
+      "p99_ms": 0.0045,
+      "min_ms": 0.0005,
+      "max_ms": 0.2326,
+      "stdev_ms": 0.0027
+    },
+    "query": {
+      "operations": 500,
+      "entities_in_graph": 200,
+      "triples_in_graph": 10000,
+      "samples": 500,
+      "mean_ms": 0.8107,
+      "median_ms": 0.6979,
+      "p95_ms": 1.2939,
+      "p99_ms": 1.6853,
+      "min_ms": 0.5305,
+      "max_ms": 2.2915,
+      "stdev_ms": 0.2639
+    }
+  },
+  "sandbox_io": {
+    "cycles": 1000,
+    "total_seconds": 3.249,
+    "cycles_per_sec": 308.0,
+    "samples": 1000,
+    "mean_ms": 3.2491,
+    "median_ms": 2.6054,
+    "p95_ms": 5.8254,
+    "p99_ms": 15.7203,
+    "min_ms": 1.3425,
+    "max_ms": 126.3601,
+    "stdev_ms": 4.6533
+  },
+  "orchestration": {
+    "tasks": 50,
+    "total_sub_agents": 150,
+    "avg_sub_agents_per_task": 3.0,
+    "samples": 50,
+    "mean_ms": 7.1063,
+    "median_ms": 3.4851,
+    "p95_ms": 25.6835,
+    "p99_ms": 80.7669,
+    "min_ms": 2.0349,
+    "max_ms": 80.7669,
+    "stdev_ms": 12.6794
+  },
+  "memory_footprint": {
+    "vaults_constructed": 100,
+    "kg_triples": 5000,
+    "sandboxes_constructed": 100,
+    "tracemalloc_total_mb": 1.365,
+    "tracemalloc_per_vault_kb": 13.98,
+    "process_rss_mb": 40.5
+  }
+}
