@@ -4,6 +4,12 @@ import os, shutil, logging, subprocess, uuid
 from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 
+from aegisflow.core.errors import (
+    SandboxPermissionError,
+    SandboxTimeoutError,
+    SandboxUnavailableError,
+)
+
 logger = logging.getLogger(__name__)
 
 @dataclass
@@ -47,7 +53,7 @@ class LocalSandbox:
     def _resolve_path(self, relative_path: str) -> str:
         target = os.path.abspath(os.path.join(self.workspace, relative_path))
         if not target.startswith(self.workspace):
-            raise PermissionError("Path traversal detected")
+            raise SandboxPermissionError(f"Path traversal detected: {relative_path}")
         return target
 
     def write_file(self, relative_path: str, content: str) -> str:
@@ -116,15 +122,25 @@ class NamespaceSandbox:
         cmd.extend(["bash", "-c", "cd " + self.workspace + " && " + command])
         return cmd
 
+    def _resolve_path(self, relative_path: str) -> str:
+        target = os.path.abspath(os.path.join(self.workspace, relative_path))
+        if not target.startswith(self.workspace):
+            raise SandboxPermissionError(f"Path traversal detected: {relative_path}")
+        return target
+
     def write_file(self, relative_path: str, content: str) -> str:
-        safe_path = os.path.join(self.workspace, relative_path)
+        safe_path = self._resolve_path(relative_path)
         os.makedirs(os.path.dirname(safe_path), exist_ok=True)
         with open(safe_path, "w") as f:
             f.write(content)
         return safe_path
 
     def read_file(self, relative_path: str) -> str:
-        return open(os.path.join(self.workspace, relative_path)).read()
+        safe_path = self._resolve_path(relative_path)
+        if not os.path.exists(safe_path):
+            raise FileNotFoundError("File not found")
+        with open(safe_path, "r") as f:
+            return f.read()
 
     def execute(self, command: str, timeout: Optional[int] = None) -> SandboxResult:
         import time
@@ -165,15 +181,25 @@ class DockerSandbox:
         except Exception:
             self._docker_available = False
 
+    def _resolve_path(self, relative_path: str) -> str:
+        target = os.path.abspath(os.path.join(self.workspace, relative_path))
+        if not target.startswith(self.workspace):
+            raise SandboxPermissionError(f"Path traversal detected: {relative_path}")
+        return target
+
     def write_file(self, relative_path: str, content: str) -> str:
-        safe_path = os.path.join(self.workspace, relative_path)
+        safe_path = self._resolve_path(relative_path)
         os.makedirs(os.path.dirname(safe_path), exist_ok=True)
         with open(safe_path, "w") as f:
             f.write(content)
         return safe_path
 
     def read_file(self, relative_path: str) -> str:
-        return open(os.path.join(self.workspace, relative_path)).read()
+        safe_path = self._resolve_path(relative_path)
+        if not os.path.exists(safe_path):
+            raise FileNotFoundError("File not found")
+        with open(safe_path, "r") as f:
+            return f.read()
 
     def execute(self, command: str, working_dir: str = "/workspace") -> SandboxResult:
         import time

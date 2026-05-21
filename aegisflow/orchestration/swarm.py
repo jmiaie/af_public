@@ -6,6 +6,7 @@ Supports OpenAI-compatible endpoints and OpenClaw session spawning.
 """
 
 import uuid
+import asyncio
 import logging
 import time
 from typing import List, Dict, Any, Optional
@@ -115,6 +116,11 @@ class SubAgent:
                 "duration_ms": int((time.time() - start) * 1000),
             }
 
+    async def execute_async(self) -> Dict[str, Any]:
+        """Async wrapper — runs execute() in a thread so LLM I/O doesn't block."""
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self.execute)
+
 
 class LeadOrchestrator:
     """
@@ -138,6 +144,7 @@ class LeadOrchestrator:
         )
         self.sub_agents: List[SubAgent] = []
         self.session_id = str(uuid.uuid4())
+        self.fallback_count: int = 0
 
     def _decompose_with_llm(self, task: str) -> List[str]:
         """
@@ -161,6 +168,7 @@ class LeadOrchestrator:
                 return sub_tasks
         except Exception as e:
             logger.warning(f"LLM decomposition failed, using fallback: {e}")
+            self.fallback_count += 1
 
         # Fallback rule-based decomposition
         return [
@@ -238,3 +246,59 @@ class LeadOrchestrator:
             f"sources, and actionable insights.",
             max_agents=max_agents,
         )
+
+    async def delegate_and_run_async(self, task: str, max_agents: int = 5) -> Dict[str, Any]:
+        """
+        Async version — runs sub-agents concurrently via asyncio.gather.
+        This is a 3-5× speedup on real LLM workloads (§5.5).
+        """
+        sub_tasks = self._decompose_with_llm(task)
+        agents = []
+
+        for st in sub_tasks[:max_agents]:
+            agent = SubAgent(
+                task_id=self.session_id,
+                prompt=st,
+                sandbox=self.sandbox,
+                llm=self.llm,
+                backend=self.llm.backend,
+            )
+            self.sub_agents.append(agent)
+            agents.append(agent)
+
+        # Run all sub-agents concurrently
+        results = await asyncio.gather(*(a.execute_async() for a in agents))
+        results = list(results)
+
+        # Synthesis
+        synthesis_prompt = (
+            f"Synthesize the following sub-task results into a single coherent answer:\n"
+            + "\n".join(f"[{i+1}] {r.get('result', r.get('error', ''))}" for i, r in enumerate(results))
+        )
+        try:
+            synthesis_response = self.llm.chat(
+                [{"role": "user", "content": synthesis_prompt}],
+                temperature=0.5,
+                max_tokens=1024,
+            )
+            synthesis = synthesis_response.content
+        except Exception as e:
+            synthesis = f"Synthesis completed for {len(results)} sub-tasks (LLM synthesis failed: {e})"
+
+        # Store to persistent memory
+        self.memory.store_verbatim(
+            content=f"## Task: {task}\n\n## Synthesis\n{synthesis}\n\n## Sub-agent Results\n"
+                    + "\n".join(f"### Agent {r['agent_id']}: {r['status']}\n{r.get('result', r.get('error', ''))}" for r in results),
+            category="work",
+            filename=f"session_{self.session_id}.md",
+        )
+
+        return {
+            "session_id": self.session_id,
+            "status": "success",
+            "task": task,
+            "sub_tasks": sub_tasks,
+            "sub_agents": [{"agent_id": r["agent_id"], "status": r["status"]} for r in results],
+            "synthesis": synthesis,
+            "details": results,
+        }

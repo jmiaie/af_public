@@ -10,6 +10,7 @@ Computes a 0-100 health score across:
 - schema version
 """
 
+import re
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
@@ -89,7 +90,7 @@ class BrainDoctor:
     """
 
     # Required frontmatter fields for skill conformance
-    REQUIRED_FRONTatter = {"name", "description"}
+    REQUIRED_FRONTMATTER = {"name", "description"}
 
     def __init__(self, skills_dir: str | Path, vault_path: str | Path | None = None):
         self.skills_dir = Path(skills_dir)
@@ -191,7 +192,7 @@ class BrainDoctor:
                 continue
 
             frontmatter = parts[1]
-            for field_name in self.REQUIRED_FRONTatter:
+            for field_name in self.REQUIRED_FRONTMATTER:
                 if field_name not in frontmatter:
                     failing.append(f"{skill_dir.name}: missing '{field_name}' in frontmatter")
                     continue
@@ -272,7 +273,7 @@ class BrainDoctor:
         dead_links: list[str] = []
         for md_file in self.vault_path.rglob("*.md"):
             content = md_file.read_text()
-            for match in __import__("re").finditer(r"\[([^\]]+)\]\(([^)]+)\)", content):
+            for match in re.finditer(r"\[([^\]]+)\]\(([^)]+)\)", content):
                 link = match.group(2)
                 if link.startswith("http"):
                     continue  # Skip external links

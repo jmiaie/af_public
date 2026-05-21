@@ -44,7 +44,7 @@ class MemoryChunk:
     category: str
     filename: str
     embedding: Optional[List[float]] = None
-    created_at: str = field(default_factory=lambda: time.strftime("%Y-%m-%d %H:%M:%M"))
+    created_at: str = field(default_factory=lambda: time.strftime("%Y-%m-%d %H:%M:%S"))
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:

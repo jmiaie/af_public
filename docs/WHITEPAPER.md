@@ -1,4 +1,4 @@
-# SandFish: A Clean-Room Multi-Agent Swarm Intelligence System
+# AegisFlow: A Clean-Room Multi-Agent Swarm Intelligence System
 
 ## White Paper
 

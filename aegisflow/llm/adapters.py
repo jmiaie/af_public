@@ -14,6 +14,14 @@ import json
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
 
+from aegisflow.core.errors import (
+    AegisFlowLLMError,
+    LLMTimeoutError,
+    LLMAuthError,
+    LLMRateLimitError,
+    LLMProviderError,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -133,9 +141,41 @@ class OpenAICompatibleLLM:
                 finish_reason=choice.get("finish_reason", "stop"),
                 metadata={"raw": data},
             )
+        except urllib.error.HTTPError as e:
+            if e.code in (401, 403):
+                raise LLMAuthError(
+                    f"Authentication failed ({e.code})", cause=e
+                ) from e
+            elif e.code == 429:
+                retry_after = float(e.headers.get("Retry-After", 5))
+                raise LLMRateLimitError(
+                    "Rate limit exceeded",
+                    retry_after=retry_after,
+                    cause=e,
+                ) from e
+            elif e.code >= 500:
+                raise LLMProviderError(
+                    f"Provider error ({e.code})", cause=e
+                ) from e
+            else:
+                raise AegisFlowLLMError(
+                    f"LLM HTTP error ({e.code})", cause=e
+                ) from e
+        except urllib.error.URLError as e:
+            if "timed out" in str(e).lower():
+                raise LLMTimeoutError(
+                    f"LLM request timed out", cause=e
+                ) from e
+            raise AegisFlowLLMError(
+                f"LLM call failed: {e}", cause=e
+            ) from e
+        except AegisFlowLLMError:
+            raise  # Don't re-wrap our own errors
         except Exception as e:
             logger.error(f"LLM call failed: {e}")
-            raise
+            raise AegisFlowLLMError(
+                f"LLM call failed: {e}", cause=e
+            ) from e
 
     def complete(self, prompt: str, model: Optional[str] = None, **kwargs) -> AgenticResponse:
         """Simple single-shot completion (converts to chat format)."""
@@ -264,18 +304,45 @@ class AgenticLLM:
     """
     Unified LLM interface. Can use either OpenAI-compatible API
     or OpenClaw session bridge. Switch implementations via strategy.
+
+    Providers are registered in a class-level registry.  To add a new
+    backend:
+        AgenticLLM.register("my_backend", MyLLMClass)
+    Then use:
+        llm = AgenticLLM(backend="my_backend", config={...})
     """
+
+    _REGISTRY: Dict[str, type] = {}
+
+    @classmethod
+    def register(cls, name: str, provider_cls: type) -> None:
+        """Register a provider class under a backend name."""
+        cls._REGISTRY[name] = provider_cls
+
+    @classmethod
+    def available_backends(cls) -> List[str]:
+        """Return the list of registered backend names."""
+        return list(cls._REGISTRY.keys())
 
     def __init__(
         self,
-        backend: str = "openai",  # "openai" | "openclaw"
+        backend: str = "openai",  # "openai" | "openclaw" | "gemini" | "ollama" | "nvidia" | …
         openai_config: Optional[Dict[str, Any]] = None,
         openclaw_config: Optional[Dict[str, Any]] = None,
+        config: Optional[Dict[str, Any]] = None,
     ):
+        # Legacy compat: honour explicit openai_config / openclaw_config kwargs
         if backend == "openclaw":
-            self._impl = OpenClawSession(**(openclaw_config or {}))
+            self._impl = OpenClawSession(**(openclaw_config or config or {}))
+        elif backend == "openai":
+            self._impl = OpenAICompatibleLLM(**(openai_config or config or {}))
+        elif backend in self._REGISTRY:
+            self._impl = self._REGISTRY[backend](**(config or {}))
         else:
-            self._impl = OpenAICompatibleLLM(**(openai_config or {}))
+            raise ValueError(
+                f"Unknown LLM backend '{backend}'. "
+                f"Available: {self.available_backends()}"
+            )
 
         self.backend = backend
 
@@ -290,3 +357,24 @@ class AgenticLLM:
         if not isinstance(self._impl, OpenClawSession):
             raise NotImplementedError("spawn() requires OpenClaw backend")
         return self._impl.spawn_subagent(task, **kwargs)
+
+
+# ---------------------------------------------------------------------------
+# Auto-register built-in providers on import
+# ---------------------------------------------------------------------------
+def _auto_register() -> None:
+    """Register all built-in LLM providers.  Imports are lazy so missing
+    optional deps don't break the package."""
+    from aegisflow.llm.gemini import GeminiLLM, GeminiOpenAIProxy
+    from aegisflow.llm.ollama import OllamaLLM, OllamaOpenAIProxy
+    from aegisflow.llm.nvidia import NVIDIAllm, LocalNVIDIABridge
+
+    AgenticLLM.register("gemini", GeminiLLM)
+    AgenticLLM.register("gemini_proxy", GeminiOpenAIProxy)
+    AgenticLLM.register("ollama", OllamaLLM)
+    AgenticLLM.register("ollama_proxy", OllamaOpenAIProxy)
+    AgenticLLM.register("nvidia", NVIDIAllm)
+    AgenticLLM.register("nvidia_local", LocalNVIDIABridge)
+
+
+_auto_register()

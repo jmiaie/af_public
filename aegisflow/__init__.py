@@ -6,6 +6,8 @@ Core exports:
 - Memory: MemoryVault, KnowledgeGraph, PalaceNavigation
 - Sandbox: LocalSandbox, DockerSandbox, SandboxResult
 - LLM: OpenAICompatibleLLM, OpenClawSession, AgenticResponse, SubAgentResult
+- Core: Protocols (LLMProvider, SandboxProvider, MemoryProvider, Tool)
+- Core: Errors (AegisFlowError hierarchy)
 """
 
 from aegisflow.orchestration.swarm import LeadOrchestrator, SubAgent
@@ -34,8 +36,21 @@ from aegisflow.brain import (
     BrainHealthReport,
     run_doctor,
 )
+from aegisflow.core import (
+    # Protocols
+    LLMProvider,
+    SandboxProvider,
+    MemoryProvider,
+    Tool,
+    # Errors
+    AegisFlowError,
+    AegisFlowLLMError,
+    AegisFlowSandboxError,
+    AegisFlowMemoryError,
+    AegisFlowOrchestrationError,
+)
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     # Orchestration
@@ -69,4 +84,15 @@ __all__ = [
     "BrainDoctor",
     "BrainHealthReport",
     "run_doctor",
+    # Protocols
+    "LLMProvider",
+    "SandboxProvider",
+    "MemoryProvider",
+    "Tool",
+    # Errors
+    "AegisFlowError",
+    "AegisFlowLLMError",
+    "AegisFlowSandboxError",
+    "AegisFlowMemoryError",
+    "AegisFlowOrchestrationError",
 ]

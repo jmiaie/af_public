@@ -16,6 +16,7 @@ import pytest
 from aegisflow.memory import KnowledgeGraph, MemoryVault, PalaceNavigation
 from aegisflow.orchestration import LeadOrchestrator
 from aegisflow.sandbox import LocalSandbox
+from aegisflow.core.errors import SandboxPermissionError
 
 
 def test_memory_vault_creation(tmp_path):
@@ -41,7 +42,7 @@ def test_palace_navigation_context(tmp_path):
 
 def test_sandbox_path_traversal_prevention(tmp_path):
     sandbox = LocalSandbox(workspace_path=str(tmp_path))
-    with pytest.raises(PermissionError):
+    with pytest.raises(SandboxPermissionError):
         sandbox.read_file("../../../../etc/passwd")
 
 

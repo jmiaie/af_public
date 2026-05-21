@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "aegisflow"
-version = "0.1.0"
+version = "0.3.0"
 description = "The Universal, Security-First Multi-Agent Hybrid System"
 readme = "README.md"
 license = {text = "MIT"}
@@ -21,7 +21,10 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Typing :: Typed",
 ]
 
 dependencies = [
@@ -45,9 +48,13 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/micap/aegisflow"
-Repository = "https://github.com/micap/aegisflow"
+Homepage = "https://github.com/jmiaie/af"
+Repository = "https://github.com/jmiaie/af"
 Documentation = "https://docs.aegisflow.ai"
+Changelog = "https://github.com/jmiaie/af/blob/main/CHANGELOG.md"
+
+[project.scripts]
+aegisflow = "aegisflow.__main__:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["aegisflow"]
