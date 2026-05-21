@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CLI entrypoint** (`__main__.py`): `aegisflow doctor`, `aegisflow bench`, `aegisflow run`, `aegisflow version` commands
 - **PyPI readiness**: `py.typed` marker, `CHANGELOG.md`, `[project.scripts]` in pyproject.toml
 - Structured HTTP error classification in `OpenAICompatibleLLM` — 401→AuthError, 429→RateLimitError, 5xx→ProviderError
+- **Institutional Repository Hygiene**: Added standard `LICENSE` (MIT), complete community and governance structures (`CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `.github/CODEOWNERS`, pull request and issue templates)
+- **Security Policy & Threat Model** (`SECURITY.md`): Established a clear vulnerability disclosure policy, supported versions, and a robust 1-page Threat Model detailing trust boundaries and isolation scopes
+- **Performance Regression Gate** (`benchmarks/regress.py`): Built a standalone regression gate enforcing a ≤20% p95 execution time margin
+- **Continuous Integration Workflow** (`.github/workflows/ci.yml`): Formulated multi-OS build and test automation, strict code coverage gating, security checks, and benchmark regression runs
+- **Reproducible Lockfile** (`uv.lock`): Sealed package environment via `uv` lockfile to guarantee consistent environment replication
 
 ### Changed
 - Sandbox path-traversal errors now raise `SandboxPermissionError` (subclass of `AegisFlowSandboxError`) instead of generic `PermissionError`
