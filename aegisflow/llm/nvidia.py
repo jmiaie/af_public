@@ -5,10 +5,10 @@ Provides integration with NVIDIA NIM endpoints (nvidia/**/*.nvidia.com)
 and the OpenClaw NVIDIA plugin which routes to NVIDIA's hosted models.
 """
 
-import os
 import json
 import logging
-from typing import List, Dict, Any, Optional
+import os
+from typing import Any, Dict, List, Optional
 
 from aegisflow.llm.adapters import AgenticResponse
 
@@ -41,8 +41,8 @@ class NVIDIAllm:
         model: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: int = 2048,
-        tools: Optional[List[Dict]] = None,
-        **kwargs,
+        tools: Optional[List[Dict[str, Any]]] = None,
+        **kwargs: Any,
     ) -> AgenticResponse:
         """Send chat request to NVIDIA NIM endpoint."""
         import urllib.request
@@ -91,7 +91,7 @@ class NVIDIAllm:
             logger.error(f"NVIDIA NIM call failed: {e}")
             raise
 
-    def complete(self, prompt: str, **kwargs) -> AgenticResponse:
+    def complete(self, prompt: str, **kwargs: Any) -> AgenticResponse:
         return self.chat(messages=[{"role": "user", "content": prompt}], **kwargs)
 
 
@@ -123,8 +123,8 @@ class LocalNVIDIABridge:
         model: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: int = 2048,
-        tools: Optional[List[Dict]] = None,
-        **kwargs,
+        tools: Optional[List[Dict[str, Any]]] = None,
+        **kwargs: Any,
     ) -> AgenticResponse:
         """Route through OpenClaw gateway's NVIDIA plugin."""
         import urllib.request
@@ -171,5 +171,5 @@ class LocalNVIDIABridge:
             logger.error(f"Local NVIDIA bridge failed: {e}")
             raise
 
-    def complete(self, prompt: str, **kwargs) -> AgenticResponse:
+    def complete(self, prompt: str, **kwargs: Any) -> AgenticResponse:
         return self.chat(messages=[{"role": "user", "content": prompt}], **kwargs)

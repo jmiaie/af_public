@@ -13,8 +13,8 @@ Architecture:
   SemanticMemory → native AegisFlow embeddings (fallback only)
 """
 
+from aegisflow.memory.ompa_adapter import KnowledgeGraph, MemoryVault, PalaceNavigation
 from aegisflow.memory.ompa_memory import AegisFlowMemory
-from aegisflow.memory.ompa_adapter import MemoryVault, KnowledgeGraph, PalaceNavigation
 from aegisflow.memory.semantic import SemanticMemory
 
 __all__ = [

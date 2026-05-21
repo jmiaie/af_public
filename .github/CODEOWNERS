@@ -1,0 +1,12 @@
+# AegisFlow Code Owners
+# This file defines the individuals or teams that own the codebase.
+
+# Global owners (default)
+*       @jmiaie
+
+# Core package owners
+/aegisflow/          @jmiaie
+
+# Workflow & build owners
+/.github/            @jmiaie
+/pyproject.toml      @jmiaie

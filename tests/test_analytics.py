@@ -8,26 +8,24 @@ from __future__ import annotations
 
 import pytest
 
+from aegisflow.analytics.mtb import MTB, ModelTier
+from aegisflow.analytics.session import (
+    SessionAnalytics,
+    SessionAnalyzer,
+    render_analytics_summary,
+)
 from aegisflow.analytics.tool_categories import (
     ToolCategory,
     categorize_tool,
     parse_mcp_tool,
     tool_display_name,
 )
-from aegisflow.analytics.session import (
-    SessionAnalyzer,
-    SessionAnalytics,
-    render_analytics_summary,
-)
-from aegisflow.analytics.mtb import MTB, ModelTier
 from aegisflow.llm.pricing import (
-    ModelPricing,
-    get_pricing,
+    TurnUsage,
     estimate_cost,
     estimate_cost_from_dict,
-    TurnUsage,
+    get_pricing,
 )
-
 
 # ── Tool Categories ──────────────────────────────────────────────────────────
 

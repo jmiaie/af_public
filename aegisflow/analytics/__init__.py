@@ -6,17 +6,17 @@ Tool categories: categorize any OpenClaw/Claude tool by type (file-io, shell, ag
 Session analytics: compute token/cost stats from session turn logs.
 """
 
-from aegisflow.analytics.tool_categories import (
-    ToolCategory,
-    categorize_tool,
-    parse_mcp_tool,
-    tool_display_name,
-    CATEGORY_LABELS,
-)
 from aegisflow.analytics.session import (
     SessionAnalytics,
     SessionAnalyzer,
     render_analytics_summary,
+)
+from aegisflow.analytics.tool_categories import (
+    CATEGORY_LABELS,
+    ToolCategory,
+    categorize_tool,
+    parse_mcp_tool,
+    tool_display_name,
 )
 
 __all__ = [

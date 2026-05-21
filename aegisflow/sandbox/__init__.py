@@ -1,9 +1,11 @@
 from .environment import (
+    DockerSandbox,
     LocalSandbox,
     NamespaceSandbox,
-    DockerSandbox,
-    Sandbox as SandboxAlias,
     SandboxResult,
+)
+from .environment import (
+    Sandbox as SandboxAlias,
 )
 
 __all__ = [

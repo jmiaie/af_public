@@ -7,19 +7,18 @@ Provides:
 - AgenticLLM: unified interface both can be swapped through
 """
 
+import logging
 import os
 import uuid
-import logging
-import json
-from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, cast
 
 from aegisflow.core.errors import (
     AegisFlowLLMError,
-    LLMTimeoutError,
     LLMAuthError,
-    LLMRateLimitError,
     LLMProviderError,
+    LLMRateLimitError,
+    LLMTimeoutError,
 )
 
 logger = logging.getLogger(__name__)
@@ -80,8 +79,6 @@ class OpenAICompatibleLLM:
         default_model: Optional[str] = None,
         timeout: int = 120,
     ):
-        import urllib.request
-        import urllib.parse
 
         self.base_url = base_url or os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
         self.api_key = api_key or os.environ.get("OPENAI_API_KEY", "dummy")
@@ -95,13 +92,13 @@ class OpenAICompatibleLLM:
         model: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: int = 2048,
-        tools: Optional[List[Dict]] = None,
-        **kwargs,
+        tools: Optional[List[Dict[str, Any]]] = None,
+        **kwargs: Any,
     ) -> AgenticResponse:
         """Send a chat completion request."""
-        import urllib.request
-        import urllib.parse
         import json as _json
+        import urllib.parse
+        import urllib.request
 
         model = model or self.default_model
         url = f"{self.base_url.rstrip('/')}/chat/completions"
@@ -164,7 +161,7 @@ class OpenAICompatibleLLM:
         except urllib.error.URLError as e:
             if "timed out" in str(e).lower():
                 raise LLMTimeoutError(
-                    f"LLM request timed out", cause=e
+                    "LLM request timed out", cause=e
                 ) from e
             raise AegisFlowLLMError(
                 f"LLM call failed: {e}", cause=e
@@ -177,7 +174,7 @@ class OpenAICompatibleLLM:
                 f"LLM call failed: {e}", cause=e
             ) from e
 
-    def complete(self, prompt: str, model: Optional[str] = None, **kwargs) -> AgenticResponse:
+    def complete(self, prompt: str, model: Optional[str] = None, **kwargs: Any) -> AgenticResponse:
         """Simple single-shot completion (converts to chat format)."""
         return self.chat(messages=[{"role": "user", "content": prompt}], model=model, **kwargs)
 
@@ -210,12 +207,12 @@ class OpenClawSession:
         self._sessions_send = None
         self._sessions_list = None
 
-    def _get_openclaw_tools(self):
+    def _get_openclaw_tools(self) -> None:
         """Lazily import OpenClaw's sessions tools."""
         if self._sessions_spawn is None:
             try:
                 # Import the openclaw sessions tool functions if accessible
-                import openclaw
+                import openclaw  # type: ignore[import-not-found]
                 self._openclaw = openclaw
                 logger.info("OpenClaw modules loaded successfully")
             except ImportError:
@@ -332,6 +329,7 @@ class AgenticLLM:
         config: Optional[Dict[str, Any]] = None,
     ):
         # Legacy compat: honour explicit openai_config / openclaw_config kwargs
+        self._impl: Any
         if backend == "openclaw":
             self._impl = OpenClawSession(**(openclaw_config or config or {}))
         elif backend == "openai":
@@ -346,13 +344,13 @@ class AgenticLLM:
 
         self.backend = backend
 
-    def chat(self, messages: List[Dict[str, str]], **kwargs) -> AgenticResponse:
-        return self._impl.chat(messages, **kwargs)
+    def chat(self, messages: List[Dict[str, str]], **kwargs: Any) -> AgenticResponse:
+        return cast(AgenticResponse, self._impl.chat(messages, **kwargs))
 
-    def complete(self, prompt: str, **kwargs) -> AgenticResponse:
-        return self._impl.complete(prompt, **kwargs)
+    def complete(self, prompt: str, **kwargs: Any) -> AgenticResponse:
+        return cast(AgenticResponse, self._impl.complete(prompt, **kwargs))
 
-    def spawn(self, task: str, **kwargs) -> SubAgentResult:
+    def spawn(self, task: str, **kwargs: Any) -> SubAgentResult:
         """Only available on OpenClaw backend."""
         if not isinstance(self._impl, OpenClawSession):
             raise NotImplementedError("spawn() requires OpenClaw backend")
@@ -366,8 +364,8 @@ def _auto_register() -> None:
     """Register all built-in LLM providers.  Imports are lazy so missing
     optional deps don't break the package."""
     from aegisflow.llm.gemini import GeminiLLM, GeminiOpenAIProxy
+    from aegisflow.llm.nvidia import LocalNVIDIABridge, NVIDIAllm
     from aegisflow.llm.ollama import OllamaLLM, OllamaOpenAIProxy
-    from aegisflow.llm.nvidia import NVIDIAllm, LocalNVIDIABridge
 
     AgenticLLM.register("gemini", GeminiLLM)
     AgenticLLM.register("gemini_proxy", GeminiOpenAIProxy)

@@ -8,10 +8,10 @@ Always-on ambient capture skill. Fires on every inbound message to capture:
 IMPORTANT: Runs in parallel. NEVER blocks the main response.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Optional
-from collections.abc import Callable
+from typing import Optional, Any, cast
 
 
 @dataclass
@@ -67,11 +67,11 @@ class SignalDetector:
 
     def __init__(
         self,
-        vault,
-        semantic_memory=None,
-        brain_first_lookup=None,
+        vault: Any,
+        semantic_memory: Any = None,
+        brain_first_lookup: Any = None,
         model_name: str = "tinyllama:latest",
-        spawn_fn: Optional[Callable] = None,
+        spawn_fn: Optional[Callable[..., Any]] = None,
     ):
         """
         vault: MemoryVault instance
@@ -125,9 +125,12 @@ class SignalDetector:
         """Async version — use spawn_fn for true parallelism."""
         if self.spawn_fn:
             # Spawn as parallel sub-agent
-            return await self.spawn_fn(
-                task=f"Signal detect: {user_message[:200]}",
-                background=True,
+            return cast(
+                SignalSummary,
+                await self.spawn_fn(
+                    task=f"Signal detect: {user_message[:200]}",
+                    background=True,
+                ),
             )
         return self.detect(user_message, is_operational, context)
 
@@ -278,7 +281,7 @@ class SignalDetector:
     def log_summary(self, summary: SignalSummary) -> str:
         """Generate the one-line log string for signal detection."""
         if summary.skipped:
-            return f"Signals: 0 ideas, 0 entities, 0 facts (skipped: operational)"
+            return "Signals: 0 ideas, 0 entities, 0 facts (skipped: operational)"
         paths = []
         if summary.idea_paths:
             paths.append(f"ideas: {', '.join(summary.idea_paths[:2])}")

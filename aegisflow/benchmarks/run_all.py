@@ -3,16 +3,22 @@ AegisFlow Benchmark Suite
 Run: python3 -m aegisflow.benchmarks.run_all
 """
 
-import time, json, sys, os, psutil, platform
+import json
+import os
+import platform
+import sys
+import time
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Any, Dict
+
+import psutil
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from aegisflow.llm import OllamaLLM, OllamaOpenAIProxy
-from aegisflow.memory import MemoryVault, KnowledgeGraph
-from aegisflow.sandbox import LocalSandbox
+from aegisflow.llm import OllamaLLM
+from aegisflow.memory import KnowledgeGraph, MemoryVault
 from aegisflow.orchestration import LeadOrchestrator
+from aegisflow.sandbox import LocalSandbox
 
 
 class Bench:
@@ -29,17 +35,17 @@ class Bench:
         r["ollama_complete"] = self.bench_llm(iters)
         print(f"\n[2] Ollama chat ({iters} runs)")
         r["ollama_chat"] = self.bench_chat(iters)
-        print(f"\n[3] Vault write (1000)")
+        print("\n[3] Vault write (1000)")
         r["vault_write"] = self.bench_vault_write(1000)
-        print(f"\n[4] KnowledgeGraph (1000 triples)")
+        print("\n[4] KnowledgeGraph (1000 triples)")
         r["knowledge_graph"] = self.bench_kg(1000)
-        print(f"\n[5] Sandbox write (500)")
+        print("\n[5] Sandbox write (500)")
         r["sandbox_write"] = self.bench_sandbox_write(500)
-        print(f"\n[6] Sandbox exec (20)")
+        print("\n[6] Sandbox exec (20)")
         r["sandbox_exec"] = self.bench_sandbox_exec(20)
-        print(f"\n[7] Orchestrator (3 runs)")
+        print("\n[7] Orchestrator (3 runs)")
         r["orchestrator"] = self.bench_orch(3)
-        print(f"\n[8] Full swarm (1 run)")
+        print("\n[8] Full swarm (1 run)")
         r["full_swarm"] = self.bench_full_swarm()
         return r
 
@@ -96,7 +102,8 @@ class Bench:
             kg.add_triple(f"e{i%100}", "rel", f"e{(i+1)%100}")
         add_s = time.perf_counter() - t0
         t0 = time.perf_counter()
-        for i in range(100): kg.query_entity(f"e{i}")
+        for i in range(100):
+            kg.query_entity(f"e{i}")
         q_s = time.perf_counter() - t0
         return {"1000_add_s": round(add_s,4), "100_queries_s": round(q_s,4),
                 "adds_per_sec": round(n/add_s,0)}
@@ -189,12 +196,12 @@ def main():
           f"{sys_info['ram_avail_gb']}GB RAM avail")
 
     llm = results["ollama_complete"]
-    print(f"\nLLM (TinyLlama 1B @ Ollama):")
+    print("\nLLM (TinyLlama 1B @ Ollama):")
     print(f"  Completion: {llm['mean_s']}s mean | {llm['min_s']}-{llm['max_s']}s range | "
           f"{llm['total_tokens']} tokens total")
 
     vw = results["vault_write"]
-    print(f"\nMemoryVault:")
+    print("\nMemoryVault:")
     print(f"  Write: {vw[f'{1000}_writes_per_sec']} writes/sec | {vw['mean_ms']}ms/write")
 
     kg = results["knowledge_graph"]
@@ -202,7 +209,7 @@ def main():
           f"{kg['100_queries_s']}s for 100 queries")
 
     sw = results["sandbox_write"]
-    print(f"\nSandbox:")
+    print("\nSandbox:")
     print(f"  File write: {sw[f'{500}_writes_per_sec']} writes/sec | {sw['mean_ms']}ms/write")
 
     se = results["sandbox_exec"]
@@ -210,11 +217,11 @@ def main():
 
     orch = results["orchestrator"]
     avg_time = sum(r["time_s"] for r in orch["runs"]) / len(orch["runs"])
-    print(f"\nOrchestrator:")
+    print("\nOrchestrator:")
     print(f"  Avg task: {avg_time:.1f}s | {orch['runs'][0]['subtasks']} sub-tasks decomposed")
 
     fs = results["full_swarm"]
-    print(f"\nFull Swarm (end-to-end):")
+    print("\nFull Swarm (end-to-end):")
     print(f"  Total: {fs['timings']['total']}s | decompose:{fs['timings']['decompose']}s "
           f"| subagents:{fs['timings']['subagents']}s | synthesis:{fs['timings']['synthesis']}s")
 

@@ -19,9 +19,12 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING, Optional, Any, Dict, List, cast
 
 from aegisflow.memory.semantic import SemanticMemory
+
+if TYPE_CHECKING:
+    from aegisflow.brain.lookup import BrainLookupResult
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +54,7 @@ class AegisFlowMemory:
     def __init__(
         self,
         vault_path: str | Path = "./workspace",
-        gbrain_vault_path: str | Path = None,
+        gbrain_vault_path: str | Path | None = None,
         enable_semantic: bool = True,
         agent_name: str = "aegisflow",
     ):
@@ -59,7 +62,7 @@ class AegisFlowMemory:
         self.gbrain_vault_path = Path(gbrain_vault_path) if gbrain_vault_path else None
         self.agent_name = agent_name
         self._enable_semantic = enable_semantic
-        self._ompa = None
+        self._ompa: Any = None
         self._semantic_memory: Optional[SemanticMemory] = None
         self._gbrain_engine = None
         self._session_started = False
@@ -69,7 +72,7 @@ class AegisFlowMemory:
     # -------------------------------------------------------------------------
 
     @property
-    def ompa(self):
+    def ompa(self) -> Any:
         """Lazy-load OMPA on first access."""
         if self._ompa is None:
             try:
@@ -90,7 +93,7 @@ class AegisFlowMemory:
         """AegisFlow's native SemanticMemory as fallback when OMPA unavailable."""
         if self._semantic_memory is None:
             self._semantic_memory = SemanticMemory(
-                index_path=str(self.vault_path / ".semantic_index.json")
+                vault_path=str(self.vault_path)
             )
         return self._semantic_memory
 
@@ -98,7 +101,7 @@ class AegisFlowMemory:
     # Lifecycle — match OMPA's hook interface
     # -------------------------------------------------------------------------
 
-    def session_start(self):
+    def session_start(self) -> Any:
         """Run session start: populate KG, build semantic index."""
         if self.ompa is None:
             return {"success": False, "error": "OMPA not available"}
@@ -106,23 +109,23 @@ class AegisFlowMemory:
         self._session_started = True
         return result
 
-    def standup(self):
+    def standup(self) -> Any:
         """Alias for session_start()."""
         return self.session_start()
 
-    def handle_message(self, message: str):
+    def handle_message(self, message: str) -> Any:
         """Classify message and return routing hints."""
         if self.ompa is None:
             return {"success": False, "error": "OMPA not available"}
         return self.ompa.handle_message(message)
 
-    def post_tool(self, tool_name: str, tool_input: dict):
+    def post_tool(self, tool_name: str, tool_input: Dict[str, Any]) -> Any:
         """Run post-tool hook: validate writes, update KG + index."""
         if self.ompa is None:
             return {"success": False, "error": "OMPA not available"}
         return self.ompa.post_tool(tool_name, tool_input)
 
-    def stop(self):
+    def stop(self) -> Any:
         """Run stop hook."""
         if self.ompa is None:
             return {"success": False, "error": "OMPA not available"}
@@ -130,7 +133,7 @@ class AegisFlowMemory:
         self._session_started = False
         return result
 
-    def wrap_up(self):
+    def wrap_up(self) -> Any:
         """Alias for stop()."""
         return self.stop()
 
@@ -138,7 +141,7 @@ class AegisFlowMemory:
     # Routing
     # -------------------------------------------------------------------------
 
-    def classify(self, message: str):
+    def classify(self, message: str) -> Any:
         """Classify a user message. Returns OMPA Classification."""
         if self.ompa is None:
             return None
@@ -148,13 +151,13 @@ class AegisFlowMemory:
         """Get routing hint for a message."""
         if self.ompa is None:
             return "ompa_unavailable"
-        return self.ompa.get_routing_hint(message)
+        return cast(str, self.ompa.get_routing_hint(message))
 
     # -------------------------------------------------------------------------
     # Brain-First Lookup — GBrain → OMPA semantic → KG → not-found
     # -------------------------------------------------------------------------
 
-    def brain_first(self, entity_name: str) -> dict:
+    def brain_first(self, entity_name: str) -> BrainLookupResult:
         """
         Mandatory 5-step lookup before ANY external API call.
 
@@ -165,13 +168,13 @@ class AegisFlowMemory:
           4. KG entity query + backlinks
           5. Not found → external API
 
-        Returns dict with keys: found, page_content, slug, context_summary,
+        Returns BrainLookupResult with keys: found, page_content, slug, context_summary,
                                 backlinks, timeline, routing_hint
         """
         from aegisflow.brain.lookup import BrainFirstLookup
 
         lookup = BrainFirstLookup(
-            memory_vault=self,
+            memory=self,
             semantic_memory=None,  # OMPA semantic handles this
             gbrain_vault_path=self.gbrain_vault_path,
         )
@@ -181,14 +184,16 @@ class AegisFlowMemory:
     # Search
     # -------------------------------------------------------------------------
 
-    def search(self, query: str, limit: int = 5, hybrid: bool = True):
+    def search(self, query: str, limit: int = 5, hybrid: bool = True) -> Any:
         """Search vault semantically via OMPA."""
         if self.ompa is None:
             # Fallback to native SemanticMemory
+            if self.semantic_memory is None:
+                return []
             return self.semantic_memory.retrieve(query, top_k=limit)
         return self.ompa.search(query, limit=limit, hybrid=hybrid)
 
-    def qsearch(self, query: str, limit: int = 5):
+    def qsearch(self, query: str, limit: int = 5) -> Any:
         """QMD-style semantic search."""
         return self.search(query, limit=limit, hybrid=True)
 
@@ -196,29 +201,29 @@ class AegisFlowMemory:
     # KG shortcuts
     # -------------------------------------------------------------------------
 
-    def kg_add(self, subject: str, predicate: str, obj: str, valid_from: str = None):
+    def kg_add(self, subject: str, predicate: str, obj: str, valid_from: str | None = None) -> None:
         """Add a triple to the knowledge graph."""
         if self.ompa is None:
             return
         self.ompa.kg_add(subject, predicate, obj, valid_from=valid_from)
 
-    def kg_query(self, entity: str):
+    def kg_query(self, entity: str) -> List[Any]:
         """Query KG for an entity."""
         if self.ompa is None:
             return []
-        return self.ompa.kg_query(entity)
+        return cast(List[Any], self.ompa.kg_query(entity))
 
     # -------------------------------------------------------------------------
     # Vault management
     # -------------------------------------------------------------------------
 
-    def get_stats(self) -> dict:
+    def get_stats(self) -> Dict[str, Any]:
         """Get vault statistics."""
         if self.ompa is None:
             return {}
-        return self.ompa.get_stats()
+        return cast(Dict[str, Any], self.ompa.get_stats())
 
-    def update_brain(self, note_name: str, content: str, append: bool = False):
+    def update_brain(self, note_name: str, content: str, append: bool = False) -> None:
         """Update a brain note."""
         if self.ompa is None:
             return
@@ -228,10 +233,10 @@ class AegisFlowMemory:
         """Rebuild semantic index."""
         if self.ompa is None:
             return 0
-        return self.ompa.rebuild_index()
+        return cast(int, self.ompa.rebuild_index())
 
-    def sync(self) -> dict:
+    def sync(self) -> Dict[str, Any]:
         """Full sync: KG + palace + search index."""
         if self.ompa is None:
             return {}
-        return self.ompa.sync()
+        return cast(Dict[str, Any], self.ompa.sync())

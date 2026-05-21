@@ -5,25 +5,23 @@ from __future__ import annotations
 
 import pytest
 
-from aegisflow.core.protocols import LLMProvider, SandboxProvider, MemoryProvider, Tool
 from aegisflow.core.errors import (
     AegisFlowError,
     AegisFlowLLMError,
-    LLMTimeoutError,
-    LLMAuthError,
-    LLMRateLimitError,
-    LLMProviderError,
+    AegisFlowMemoryError,
     AegisFlowSandboxError,
+    LLMAuthError,
+    LLMProviderError,
+    LLMRateLimitError,
+    LLMTimeoutError,
     SandboxPermissionError,
     SandboxTimeoutError,
     SandboxUnavailableError,
-    AegisFlowMemoryError,
-    AegisFlowOrchestrationError,
 )
-from aegisflow.llm.adapters import AgenticResponse, OpenAICompatibleLLM
-from aegisflow.sandbox.environment import LocalSandbox, NamespaceSandbox, DockerSandbox
+from aegisflow.core.protocols import LLMProvider, MemoryProvider, SandboxProvider
+from aegisflow.llm.adapters import OpenAICompatibleLLM
 from aegisflow.memory.ompa_adapter import MemoryVault
-
+from aegisflow.sandbox.environment import DockerSandbox, LocalSandbox, NamespaceSandbox
 
 # ── Error Hierarchy ──────────────────────────────────────────────────────────
 
@@ -128,8 +126,9 @@ class TestSandboxStructuredErrors:
 
 class TestCLI:
     def test_version_command(self, capsys):
-        from aegisflow.__main__ import cmd_version
         import argparse
+
+        from aegisflow.__main__ import cmd_version
         cmd_version(argparse.Namespace())
         out = capsys.readouterr().out
         assert "AegisFlow" in out

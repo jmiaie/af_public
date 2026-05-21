@@ -6,18 +6,15 @@ All offline — no real API calls.
 
 from __future__ import annotations
 
-from types import SimpleNamespace
-
 import pytest
 
 from aegisflow.llm.adapters import (
     AgenticLLM,
     AgenticResponse,
-    SubAgentResult,
     OpenAICompatibleLLM,
     OpenClawSession,
+    SubAgentResult,
 )
-
 
 # ── AgenticResponse ──────────────────────────────────────────────────────────
 

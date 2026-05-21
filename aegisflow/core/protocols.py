@@ -14,7 +14,7 @@ Usage:
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Protocol, TYPE_CHECKING, runtime_checkable
+from typing import TYPE_CHECKING, Any, Dict, List, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
     from aegisflow.llm.adapters import AgenticResponse

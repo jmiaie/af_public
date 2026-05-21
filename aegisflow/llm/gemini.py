@@ -5,14 +5,13 @@ Provides direct integration with Google Gemini API via REST.
 Supports Gemini 2.0 Flash (free tier), Gemini 2.5 Flash, and Pro models.
 """
 
-import os
 import json
 import logging
-import time
-from typing import List, Dict, Any, Optional
-from dataclasses import dataclass, field
+import os
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, cast
 
-from aegisflow.llm.adapters import AgenticResponse, SubAgentResult
+from aegisflow.llm.adapters import AgenticResponse
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +28,7 @@ class GeminiConfig:
     max_tokens: int = 2048
 
     @classmethod
-    def from_env(cls, prefix: str = "GEMINI_"):
+    def from_env(cls, prefix: str = "GEMINI_") -> "GeminiConfig":
         """Load config from environment variables."""
         return cls(
             api_key=os.environ.get(f"{prefix}API_KEY", ""),
@@ -47,7 +46,7 @@ class GeminiLLM:
     - Vertex AI (via project_id and regional endpoint)
     """
 
-    def __init__(self, config: Optional[GeminiConfig] = None, **kwargs):
+    def __init__(self, config: Optional[GeminiConfig] = None, **kwargs: Any):
         if config is None:
             config = GeminiConfig(**kwargs)
         self.config = config
@@ -55,8 +54,8 @@ class GeminiLLM:
 
     def _make_request(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Make a request to the Gemini API."""
-        import urllib.request
         import urllib.parse
+        import urllib.request
 
         model_path = self.model.replace("/", "%2F")
         url = (
@@ -73,7 +72,7 @@ class GeminiLLM:
 
         try:
             with urllib.request.urlopen(req, timeout=self.config.timeout) as resp:
-                return json.loads(resp.read())
+                return cast(Dict[str, Any], json.loads(resp.read()))
         except urllib.error.HTTPError as e:
             error_body = e.read().decode("utf-8", errors="replace")
             logger.error(f"Gemini HTTP {e.code}: {error_body[:500]}")
@@ -108,8 +107,8 @@ class GeminiLLM:
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
-        tools: Optional[List[Dict]] = None,
-        **kwargs,
+        tools: Optional[List[Dict[str, Any]]] = None,
+        **kwargs: Any,
     ) -> AgenticResponse:
         """
         Send a chat-style request to Gemini.
@@ -197,7 +196,7 @@ class GeminiLLM:
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> AgenticResponse:
         """Single-shot completion (converted to chat format)."""
         return self.chat(
@@ -220,7 +219,7 @@ class GeminiLLM:
 
         models = data.get("models", [])
         logger.info(f"Found {len(models)} Gemini models")
-        return models
+        return cast(List[Dict[str, Any]], models)
 
 
 class GeminiOpenAIProxy:
@@ -253,12 +252,12 @@ class GeminiOpenAIProxy:
         model: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: int = 2048,
-        tools: Optional[List[Dict]] = None,
-        **kwargs,
+        tools: Optional[List[Dict[str, Any]]] = None,
+        **kwargs: Any,
     ) -> AgenticResponse:
         """Send chat to MyClaw gateway (which routes to Gemini)."""
-        import urllib.request
         import urllib.parse
+        import urllib.request
 
         model = model or self.default_model
         url = f"{self.base_url}/chat/completions"
@@ -302,5 +301,5 @@ class GeminiOpenAIProxy:
             logger.error(f"MyClaw gateway call failed: {e}")
             raise
 
-    def complete(self, prompt: str, **kwargs) -> AgenticResponse:
+    def complete(self, prompt: str, **kwargs: Any) -> AgenticResponse:
         return self.chat(messages=[{"role": "user", "content": prompt}], **kwargs)

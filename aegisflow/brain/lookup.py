@@ -18,9 +18,9 @@ from __future__ import annotations
 
 import logging
 import re
-from pathlib import Path
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Optional
+from pathlib import Path
+from typing import TYPE_CHECKING, Optional, Any
 
 if TYPE_CHECKING:
     from aegisflow.memory.ompa_memory import AegisFlowMemory
@@ -59,9 +59,9 @@ class BrainFirstLookup:
 
     def __init__(
         self,
-        memory: "AegisFlowMemory" = None,
-        gbrain_vault_path: str | Path = None,
-        semantic_memory=None,  # deprecated, use memory.ompa.semantic
+        memory: AegisFlowMemory | None = None,
+        gbrain_vault_path: str | Path | None = None,
+        semantic_memory: Any = None,  # deprecated, use memory.ompa.semantic
     ):
         """
         Args:
@@ -149,6 +149,8 @@ class BrainFirstLookup:
     def _step2_ompa_semantic(self, query: str) -> BrainLookupResult:
         """Step 2: OMPA semantic hybrid search across vault."""
         try:
+            if self.memory is None:
+                return BrainLookupResult(found=False)
             ompa = self.memory.ompa
             if ompa is None:
                 return BrainLookupResult(found=False)
@@ -174,6 +176,8 @@ class BrainFirstLookup:
     def _step3_ompa_vault(self, slug: str) -> BrainLookupResult:
         """Step 3: Direct OMPA vault slug lookup."""
         try:
+            if self.memory is None:
+                return BrainLookupResult(found=False)
             ompa = self.memory.ompa
             if ompa is None:
                 return BrainLookupResult(found=False)
@@ -202,6 +206,8 @@ class BrainFirstLookup:
     def _step4_kg_query(self, entity: str) -> BrainLookupResult:
         """Step 4: KG entity query for temporal relationships."""
         try:
+            if self.memory is None:
+                return BrainLookupResult(found=False)
             ompa = self.memory.ompa
             if ompa is None:
                 return BrainLookupResult(found=False)
@@ -294,7 +300,11 @@ class BrainFirstLookup:
 
 
 # Convenience function
-def brain_first(entity_name: str, memory=None, gbrain_vault_path=None) -> BrainLookupResult:
+def brain_first(
+    entity_name: str,
+    memory: AegisFlowMemory | None = None,
+    gbrain_vault_path: str | Path | None = None,
+) -> BrainLookupResult:
     """
     Convenience function for the mandatory 5-step lookup.
 

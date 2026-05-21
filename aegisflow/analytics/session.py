@@ -11,11 +11,10 @@ Integrates with:
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from collections import defaultdict
 from typing import Optional
 
-from aegisflow.llm.pricing import estimate_cost_from_dict, get_pricing, ModelPricing
-from aegisflow.analytics.tool_categories import categorize_tool, ToolCategory
+from aegisflow.analytics.tool_categories import ToolCategory, categorize_tool
+from aegisflow.llm.pricing import estimate_cost_from_dict
 
 
 @dataclass
@@ -175,17 +174,17 @@ def render_analytics_summary(a: SessionAnalytics) -> str:
     lines = [
         f"# Session Analytics — {a.session_id}",
         f"**Date**: {a.start_time.date()} | **Duration**: {a.duration_minutes:.1f} min",
-        f"",
-        f"## Cost",
+        "",
+        "## Cost",
         f"- **Estimated**: ${a.estimated_cost:.4f}",
         f"- **Without cache**: ${a.estimated_cost_without_cache:.4f}",
         f"- **Cache savings**: ${a.cache_savings:.4f}",
         f"- **Cache hit rate**: {a.cache_hit_rate * 100:.1f}%",
-        f"",
-        f"## Tokens",
+        "",
+        "## Tokens",
         f"- Input: {a.total_input_tokens:,} | Output: {a.total_output_tokens:,}",
         f"- Cache write: {a.total_cache_write_tokens:,} | Cache read: {a.total_cache_read_tokens:,}",
-        f"",
+        "",
         f"## Tool Usage ({sum(a.tool_counts.values())} total calls)",
     ]
 
@@ -196,14 +195,14 @@ def render_analytics_summary(a: SessionAnalytics) -> str:
         lines.append(f"- `{name}` ({cat.value}): {count}")
 
     # Category breakdown
-    lines.append(f"")
-    lines.append(f"## Category Breakdown")
+    lines.append("")
+    lines.append("## Category Breakdown")
     for cat, count in sorted(a.tool_categories.items(), key=lambda x: -x[1]):
         lines.append(f"- {cat.value}: {count}")
 
     # Flags
-    lines.append(f"")
-    lines.append(f"## Flags")
+    lines.append("")
+    lines.append("## Flags")
     for flag, on in [
         ("Task/Agent tools", a.uses_task_agent),
         ("MCP tools", a.uses_mcp),

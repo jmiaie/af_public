@@ -42,7 +42,6 @@ from aegisflow.memory import KnowledgeGraph, MemoryVault  # noqa: E402
 from aegisflow.orchestration import LeadOrchestrator  # noqa: E402
 from aegisflow.sandbox import LocalSandbox  # noqa: E402
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -106,8 +105,6 @@ class BenchmarkSuite:
             "machine": platform.machine(),
         }
         try:
-            import os as _os
-
             import psutil  # type: ignore[import-not-found]
             vm = psutil.virtual_memory()
             info.update({

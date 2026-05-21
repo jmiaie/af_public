@@ -9,14 +9,13 @@ Components:
 - VaultIndex: Full-text + semantic search over the entire vault
 """
 
-import os
-import json
-import time
 import hashlib
+import json
 import logging
-from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple
+import time
 from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Dict, List, Optional, cast
 
 logger = logging.getLogger(__name__)
 
@@ -25,12 +24,12 @@ _st_encoder = None
 _st_model_name = "sentence-transformers/all-MiniLM-L6-v2"
 
 
-def _get_encoder():
+def _get_encoder() -> Any:
     """Lazy-load the sentence-transformers encoder."""
     global _st_encoder
     if _st_encoder is None:
         logger.info(f"Loading embedding model: {_st_model_name}")
-        from sentence_transformers import SentenceTransformer
+        from sentence_transformers import SentenceTransformer  # type: ignore[import-not-found]
         _st_encoder = SentenceTransformer(_st_model_name)
         logger.info("Embedding model loaded")
     return _st_encoder
@@ -127,7 +126,7 @@ class SemanticMemory:
         """Encode texts to embedding vectors."""
         encoder = _get_encoder()
         embeddings = encoder.encode(texts, convert_to_numpy=True, show_progress_bar=False)
-        return embeddings.tolist()
+        return cast(List[List[float]], embeddings.tolist())
 
     def _cosine_sim(self, a: List[float], b: List[float]) -> float:
         """Compute cosine similarity between two vectors."""
@@ -192,8 +191,9 @@ class SemanticMemory:
         contents = [item["content"] for item in items]
 
         # Batch embed
+        embeddings: List[Optional[List[float]]]
         try:
-            embeddings = self._embed(contents)
+            embeddings = cast(List[Optional[List[float]]], self._embed(contents))
         except Exception as e:
             logger.warning(f"Batch embedding failed: {e}, storing without embeddings")
             embeddings = [None] * len(contents)
@@ -304,7 +304,7 @@ class SemanticMemory:
 
     def stats(self) -> Dict[str, Any]:
         """Return index statistics."""
-        categories = {}
+        categories: Dict[str, int] = {}
         for chunk in self.index:
             categories[chunk.category] = categories.get(chunk.category, 0) + 1
         with_emb = sum(1 for c in self.index if c.embedding is not None)

@@ -59,10 +59,8 @@ def cmd_doctor(args: argparse.Namespace) -> None:
 def cmd_bench(args: argparse.Namespace) -> None:
     """Run the control-plane benchmark suite."""
     # Import here so the rest of the CLI stays light.
-    sys.path.insert(0, ".")
-    try:
-        from benchmarks.bench_core import main as bench_main
-    except ImportError:
+    from pathlib import Path
+    if not Path("benchmarks/bench_core.py").exists():
         print("Error: benchmarks/bench_core.py not found in the current directory.")
         print("Run from the AegisFlow repo root.")
         sys.exit(1)
@@ -83,8 +81,8 @@ def cmd_bench(args: argparse.Namespace) -> None:
 def cmd_run(args: argparse.Namespace) -> None:
     """Execute a task via the swarm orchestrator (offline / mock LLM)."""
     from aegisflow.memory import MemoryVault
-    from aegisflow.sandbox import LocalSandbox
     from aegisflow.orchestration.swarm import LeadOrchestrator
+    from aegisflow.sandbox import LocalSandbox
 
     memory = MemoryVault(path=args.vault or "./vault")
     sandbox = LocalSandbox(workspace_path=args.sandbox or "./sandbox_workspace")

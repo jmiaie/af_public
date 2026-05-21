@@ -13,10 +13,10 @@ from types import SimpleNamespace
 
 import pytest
 
+from aegisflow.core.errors import SandboxPermissionError
 from aegisflow.memory import KnowledgeGraph, MemoryVault, PalaceNavigation
 from aegisflow.orchestration import LeadOrchestrator
 from aegisflow.sandbox import LocalSandbox
-from aegisflow.core.errors import SandboxPermissionError
 
 
 def test_memory_vault_creation(tmp_path):

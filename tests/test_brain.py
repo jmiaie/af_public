@@ -6,19 +6,13 @@ All tests are offline (no LLM, no OMPA import required).
 
 from __future__ import annotations
 
-import os
-import textwrap
-
-import pytest
-
-from aegisflow.brain.lookup import BrainFirstLookup, BrainLookupResult, brain_first
-from aegisflow.brain.signal_detector import SignalDetector, SignalSummary
 from aegisflow.brain.doctor import (
     BrainDoctor,
     BrainHealthReport,
     HealthStatus,
 )
-
+from aegisflow.brain.lookup import BrainFirstLookup, brain_first
+from aegisflow.brain.signal_detector import SignalDetector, SignalSummary
 
 # ── BrainFirstLookup ────────────────────────────────────────────────────────
 

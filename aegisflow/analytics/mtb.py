@@ -71,7 +71,7 @@ class MTB:
         print(mtb.summary())
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._records: list[ModelUsageRecord] = []
         self._daily: dict[str, DailyCostRecord] = {}
 

@@ -10,45 +10,46 @@ Core exports:
 - Core: Errors (AegisFlowError hierarchy)
 """
 
-from aegisflow.orchestration.swarm import LeadOrchestrator, SubAgent
-from aegisflow.memory import MemoryVault, KnowledgeGraph, PalaceNavigation
-from aegisflow.sandbox.environment import LocalSandbox, DockerSandbox, Sandbox as SandboxAlias
-from aegisflow.llm import (
-    OpenAICompatibleLLM,
-    OpenClawSession,
-    AgenticLLM,
-    AgenticResponse,
-    SubAgentResult,
-)
 from aegisflow.analytics import (
+    SessionAnalyzer,
     ToolCategory,
     categorize_tool,
-    SessionAnalyzer,
     render_analytics_summary,
 )
 from aegisflow.brain import (
+    BrainDoctor,
     BrainFirstLookup,
+    BrainHealthReport,
     BrainLookupResult,
-    brain_first,
     SignalDetector,
     SignalSummary,
-    BrainDoctor,
-    BrainHealthReport,
+    brain_first,
     run_doctor,
 )
 from aegisflow.core import (
-    # Protocols
-    LLMProvider,
-    SandboxProvider,
-    MemoryProvider,
-    Tool,
     # Errors
     AegisFlowError,
     AegisFlowLLMError,
-    AegisFlowSandboxError,
     AegisFlowMemoryError,
     AegisFlowOrchestrationError,
+    AegisFlowSandboxError,
+    # Protocols
+    LLMProvider,
+    MemoryProvider,
+    SandboxProvider,
+    Tool,
 )
+from aegisflow.llm import (
+    AgenticLLM,
+    AgenticResponse,
+    OpenAICompatibleLLM,
+    OpenClawSession,
+    SubAgentResult,
+)
+from aegisflow.memory import KnowledgeGraph, MemoryVault, PalaceNavigation
+from aegisflow.orchestration.swarm import LeadOrchestrator, SubAgent
+from aegisflow.sandbox.environment import DockerSandbox, LocalSandbox
+from aegisflow.sandbox.environment import Sandbox as SandboxAlias
 
 __version__ = "0.3.0"
 

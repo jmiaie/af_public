@@ -5,21 +5,20 @@ Replaces mock sub-agents with real LLM-powered execution.
 Supports OpenAI-compatible endpoints and OpenClaw session spawning.
 """
 
-import uuid
 import asyncio
 import logging
 import time
-from typing import List, Dict, Any, Optional
+import uuid
+from typing import Any, Dict, List, Optional
 
-from aegisflow.memory import MemoryVault
-from aegisflow.sandbox import LocalSandbox, SandboxResult
 from aegisflow.llm import (
     AgenticLLM,
     AgenticResponse,
-    SubAgentResult,
-    OpenAICompatibleLLM,
     OpenClawSession,
+    SubAgentResult,
 )
+from aegisflow.memory import MemoryVault
+from aegisflow.sandbox import LocalSandbox
 
 logger = logging.getLogger(__name__)
 
@@ -162,7 +161,7 @@ class LeadOrchestrator:
             ]
             response = self.llm.chat(messages, temperature=0.3, max_tokens=512)
             lines = response.content.strip().split("\n")
-            sub_tasks = [l.lstrip("1234567890. )").strip() for l in lines if l.strip()]
+            sub_tasks = [line.lstrip("1234567890. )").strip() for line in lines if line.strip()]
             if len(sub_tasks) >= 2:
                 logger.info(f"LLM decomposed into {len(sub_tasks)} sub-tasks")
                 return sub_tasks
@@ -202,7 +201,7 @@ class LeadOrchestrator:
 
         # Synthesis
         synthesis_prompt = (
-            f"Synthesize the following sub-task results into a single coherent answer:\n"
+            "Synthesize the following sub-task results into a single coherent answer:\n"
             + "\n".join(f"[{i+1}] {r.get('result', r.get('error', ''))}" for i, r in enumerate(results))
         )
         try:
@@ -272,7 +271,7 @@ class LeadOrchestrator:
 
         # Synthesis
         synthesis_prompt = (
-            f"Synthesize the following sub-task results into a single coherent answer:\n"
+            "Synthesize the following sub-task results into a single coherent answer:\n"
             + "\n".join(f"[{i+1}] {r.get('result', r.get('error', ''))}" for i, r in enumerate(results))
         )
         try:

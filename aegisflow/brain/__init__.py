@@ -7,18 +7,18 @@ Ported from garrytan/gbrain:
 - BrainDoctor: filesystem-first health checker with health score
 """
 
-from aegisflow.brain.lookup import BrainFirstLookup, BrainLookupResult, brain_first
-from aegisflow.brain.signal_detector import (
-    SignalDetector,
-    SignalSummary,
-    SignalCapture,
-)
 from aegisflow.brain.doctor import (
     BrainDoctor,
     BrainHealthReport,
     HealthCheck,
     HealthStatus,
     run_doctor,
+)
+from aegisflow.brain.lookup import BrainFirstLookup, BrainLookupResult, brain_first
+from aegisflow.brain.signal_detector import (
+    SignalCapture,
+    SignalDetector,
+    SignalSummary,
 )
 
 __all__ = [

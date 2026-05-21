@@ -2,12 +2,13 @@
 Tests for async orchestration and fallback counter.
 """
 from __future__ import annotations
+
 import asyncio
 from types import SimpleNamespace
-import pytest
+
 from aegisflow.memory import MemoryVault
-from aegisflow.sandbox import LocalSandbox
 from aegisflow.orchestration import LeadOrchestrator
+from aegisflow.sandbox import LocalSandbox
 
 
 class _FakeLLM:

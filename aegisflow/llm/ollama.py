@@ -5,10 +5,9 @@ Provides integration with local Ollama instances.
 No API key needed — runs entirely locally.
 """
 
-import os
 import json
 import logging
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from aegisflow.llm.adapters import AgenticResponse
 
@@ -40,8 +39,8 @@ class OllamaLLM:
         model: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: int = 2048,
-        tools: Optional[List[Dict]] = None,
-        **kwargs,
+        tools: Optional[List[Dict[str, Any]]] = None,
+        **kwargs: Any,
     ) -> AgenticResponse:
         """Send chat request to Ollama."""
         import urllib.request
@@ -105,7 +104,7 @@ class OllamaLLM:
         model: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: int = 512,
-        **kwargs,
+        **kwargs: Any,
     ) -> AgenticResponse:
         """Single-shot completion."""
         return self.chat(
@@ -127,7 +126,7 @@ class OllamaLLM:
             )
             with urllib.request.urlopen(req, timeout=10) as resp:
                 data = json.loads(resp.read())
-            return data.get("models", [])
+            return cast(List[Dict[str, Any]], data.get("models", []))
         except Exception as e:
             logger.error(f"Failed to list Ollama models: {e}")
             return []
@@ -139,7 +138,7 @@ class OllamaLLM:
         try:
             req = urllib.request.Request(f"{self.base_url}/", method="GET")
             with urllib.request.urlopen(req, timeout=5) as resp:
-                return resp.status == 200
+                return bool(resp.status == 200)
         except Exception:
             return False
 
@@ -166,10 +165,10 @@ class OllamaOpenAIProxy:
         )
         self.model = model
 
-    def chat(self, messages: List[Dict[str, str]], **kwargs):
+    def chat(self, messages: List[Dict[str, str]], **kwargs: Any) -> AgenticResponse:
         # Ollama v1 API uses /v1/chat/completions
         kwargs.setdefault("model", self.model)
         return self._impl.chat(messages, **kwargs)
 
-    def complete(self, prompt: str, **kwargs):
+    def complete(self, prompt: str, **kwargs: Any) -> AgenticResponse:
         return self._impl.complete(prompt, **kwargs)

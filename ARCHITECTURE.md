@@ -1,54 +1,93 @@
-AegisFlow is a universal, agnostic, transparency-focused, and security-first multi-agent hybrid system. It combines the persistent memory structures of OMPA, the security-first swarm intelligence of SandFish, the powerful sub-agent delegation and sandbox isolation of DeerFlow, and the canonical testing capabilities inspired by Claw Code.
+# Architecture — AegisFlow
 
-## Core Pillars
+This is the institutional-grade overview of how AegisFlow is wired. It supersedes
+the short `ARCHITECTURE.md` at the repo root by adding concrete module references,
+entry points, and data-flow traces.
 
-1. **Universal & Agnostic:** Designed to work with any agent framework, LLM, or environment. Memory and orchestration layers are completely decoupled from underlying providers.
-2. **Transparency:** Every decision, memory access, and tool invocation is fully auditable. No hidden prompts or opaque state manipulations.
-3. **Security-First:** Secure-by-default execution. Tools and sub-agents operate inside strict, isolated sandbox environments with explicit permission boundaries.
-4. **Swarm Intelligence:** Complex tasks are decomposed and delegated to specialized sub-agents running in parallel, orchestrated by a lead agent.
-5. **Canonical Integration:** Capable of interacting with external execution harnesses like claw-code for verified runtime environments.
-
-## System Components
-
-### 1. The Universal Memory Layer (Inspired by OMPA)
-A framework-agnostic persistent memory system that never forgets and survives context compaction.
-
-- **Vault:** Human-navigable markdown storage (Brain, Work, Org, Perf).
-- **Palace:** Agent-accessible metadata and spatial navigation (Wings, Rooms, Drawers).
-- **Knowledge Graph:** Temporal triples (Subject -> Predicate -> Object) stored locally, enabling complex relationship queries.
-- **Verbatim Storage:** Ensures zero summarization loss for critical context.
-
-### 2. The Security-First Execution Sandbox (Inspired by DeerFlow)
-Every agent has access to a strictly isolated environment, not just a conversational interface.
-
-- **Containerized Sandboxing:** Agents execute code and tools within isolated environments with scoped filesystem access (`/workspace`, `/uploads`, `/outputs`).
-- **Strict Permission Scopes:** Granular control over network access, shell execution, and file modification.
-- **Audit Trails:** Complete logging of all sandbox interactions for transparency and security review.
-
-### 3. Swarm Orchestration & Delegation (Inspired by SandFish & DeerFlow)
-The engine that enables complex, multi-step problem solving.
-
-- **Lead Agent:** The primary orchestrator that breaks down tasks and delegates them.
-- **Sub-Agents:** Specialized agents spawned on the fly with isolated, scoped context. They execute in parallel and return structured results.
-- **Context Boundaries:** Sub-agents only see what they need to see, preventing context contamination and reducing token bloat.
-- **Zero Token Burn (ZTB) Optimization:** Aggressive context management and local semantic caching to minimize unnecessary API calls.
-
-## Directory Structure
+## 1. Layered view
 
 ```
-aegisflow/
-├── core/           # Core interfaces and universal types
-├── memory/         # OMPA integration (Vault, Palace, Knowledge Graph)
-├── sandbox/        # Isolated execution environments and tool runtimes
-├── orchestration/  # Lead agent and sub-agent lifecycle management
+┌─────────────────────────────────────────────────────────────┐
+│  Application / caller                                       │
+│  (script, FastAPI handler, CLI `aegisflow ...`)             │
+└─────────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Orchestration  ── aegisflow/orchestration/swarm.py         │
+│    LeadOrchestrator                                         │
+│       _decompose_with_llm   (LLM-driven, fallback to rule)  │
+│       delegate_and_run      (sync, sequential)              │
+│       delegate_and_run_async(asyncio.gather, 3–5× speedup)  │
+│       run_research          (quick / standard / deep)       │
+│    SubAgent                                                 │
+│       execute / execute_async                               │
+└─────────────────────────────────────────────────────────────┘
+        │                 │                       │
+        ▼                 ▼                       ▼
+┌──────────────┐  ┌─────────────────┐   ┌─────────────────────┐
+│ Memory       │  │ Sandbox         │   │ LLM                 │
+│ memory/      │  │ sandbox/        │   │ llm/                │
+│  ompa_*.py   │  │  (LocalSandbox) │   │  AgenticLLM         │
+│  semantic.py │  │                 │   │  OpenAICompatible   │
+│  KG (in mem) │  │                 │   │  OpenClawSession    │
+└──────────────┘  └─────────────────┘   └─────────────────────┘
+        ▲                                          ▲
+        │                                          │
+   ┌────┴──────────────────────┐         ┌─────────┴──────────┐
+   │ Brain  aegisflow/brain/   │         │ Analytics          │
+   │  SignalDetector           │         │  analytics/        │
+   │  BrainFirstLookup         │         │   mtb (mean time   │
+   │  Doctor (health check)    │         │      between …)    │
+   └───────────────────────────┘         │   session, tool_   │
+                                         │   categories       │
+                                         └────────────────────┘
 ```
 
-## Data Flow Example
+## 2. Component reference
 
-1. **Input:** User provides a complex task.
-2. **Memory Retrieval:** Lead Agent queries the Knowledge Graph and Palace for relevant past context.
-3. **Decomposition:** Lead Agent breaks the task into sub-tasks.
-4. **Delegation:** Lead Agent spawns Sub-Agents, injecting specific scoped context and tool permissions.
-5. **Execution:** Sub-Agents perform tasks within the Sandbox (e.g., executing code, scraping).
-6. **Synthesis:** Sub-Agents return structured data; Lead Agent synthesizes the final response.
-7. **Storage:** The session is summarized, and new facts/decisions are permanently saved to the Vault and Knowledge Graph.
+| Package                       | Purpose                                              | Key types                                            |
+|-------------------------------|------------------------------------------------------|------------------------------------------------------|
+| `aegisflow.orchestration`     | Lead-orchestrator + sub-agent lifecycle              | `LeadOrchestrator`, `SubAgent`                       |
+| `aegisflow.memory`            | OMPA-compatible vault, in-memory temporal KG, semantic search shim | `MemoryVault` (via `ompa_adapter`), `KnowledgeGraph`, `SemanticMemory` |
+| `aegisflow.sandbox`           | Per-thread filesystem scope                          | `LocalSandbox`, `SandboxResult`                      |
+| `aegisflow.llm`               | Provider abstraction                                 | `AgenticLLM`, `OpenAICompatibleLLM`, `OpenClawSession`, `AgenticResponse`, `SubAgentResult` |
+| `aegisflow.brain`             | Ambient signal capture (GBrain port)                 | `SignalDetector`, `SignalCapture`, `SignalSummary`, `BrainFirstLookup`, `Doctor` |
+| `aegisflow.analytics`         | Session telemetry, MTB analytics, tool categorisation | `session`, `mtb`, `tool_categories`                  |
+| `aegisflow.benchmarks`        | LLM-integrated end-to-end harness                    | `run_all.main`                                       |
+
+## 3. Entry points
+
+| Where                                         | What it does                                          |
+|-----------------------------------------------|-------------------------------------------------------|
+| `aegisflow.__main__:main` (PyPI script `aegisflow`) | CLI entry — TODO at 0.3.0; reserved.            |
+| `LeadOrchestrator.delegate_and_run`           | The canonical Python API.                             |
+| `LeadOrchestrator.delegate_and_run_async`     | Async path — same contract, `asyncio.gather` internally. |
+| `benchmarks/bench_core.py`                    | Control-plane microbenchmark.                         |
+| `aegisflow/benchmarks/run_all.py`             | LLM-integrated end-to-end benchmark (needs Ollama).   |
+
+## 4. Data flow — `delegate_and_run("Analyse X")`
+
+1. `LeadOrchestrator` calls `_decompose_with_llm(task)`. The system prompt asks the LLM for 3–5 sub-tasks as a numbered list. On any failure (HTTP 4xx / 5xx, timeout, malformed parse), a rule-based fallback emits *Research → Analyse → Synthesise* and increments `self.fallback_count`.
+2. For each sub-task (capped at `max_agents`), a `SubAgent` is constructed with `(task_id=session_id, prompt=sub_task, sandbox=sandbox, llm=self.llm)`.
+3. `SubAgent.execute` runs the LLM (`AgenticLLM.chat`) on the sub-task and writes the response to `sandbox/workspace/<agent_id>_output.txt`.
+4. `LeadOrchestrator` aggregates `[result["content"] for r in results]` into a synthesis prompt, calls the LLM once more, and stores `## Task / ## Synthesis / ## Sub-agent Results` to `vault.work/session_<id>.md` via `MemoryVault.store_verbatim`.
+5. The return value is a dict containing `session_id`, `status`, `task`, `sub_tasks`, `sub_agents`, `synthesis`, `details`. The async path is identical except step 3 runs concurrently via `asyncio.gather`.
+
+## 5. Cross-cutting concerns
+
+- **Logging:** standard `logging.getLogger("aegisflow…")`. Level controlled by `AEGISFLOW_LOG_LEVEL`.
+- **Errors:** Sub-agent errors are captured into the result dict (`status: "error"`, `error: <str>`) rather than raised; the lead orchestrator still produces a synthesis.
+- **Determinism:** No internal RNG in the control plane; LLM determinism depends on backend (set `temperature=0` for synthesis-time reproducibility).
+- **Concurrency model:** Sub-agents are independent by design. Sequential execution is the default; `delegate_and_run_async` is the recommended path for real LLMs (latency-bound).
+- **Memory model:** `MemoryVault` is markdown-on-disk via the `ompa` package; `KnowledgeGraph` is in-memory only and rebuilt from the vault on startup (no persistence layer yet).
+
+## 6. Sandbox semantics — what `LocalSandbox` is and is not
+
+`LocalSandbox` enforces a *path scope* — every `write_file` / `read_file` is relative to `workspace_path`. It does **not**:
+- run in a separate process
+- enforce a syscall filter (no seccomp / no AppArmor)
+- prevent symlink escape if the agent constructs an absolute path
+- restrict network access
+
+For untrusted prompts, wrap AegisFlow itself in a container or a dedicated VM. See `SECURITY.md` for the threat model.

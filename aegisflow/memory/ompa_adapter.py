@@ -6,7 +6,7 @@ ensuring that agents can maintain persistent context across sessions.
 """
 
 import os
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 
 class MemoryVault:
