@@ -1,5 +1,8 @@
 # AegisFlow
 
+> **Portfolio status (2026-09-30):** public **AegisFlow mirror** (`af_public`). Canonical private work: [`jmiaie/af`](https://github.com/jmiaie/af). SandFish ([`sandfish`](https://github.com/jmiaie/sandfish)) is the separate v1 swarm **demo**. See [`STATUS.md`](STATUS.md) and [`docs/POSITIONING.md`](docs/POSITIONING.md).
+
+
 > A security-first, framework-agnostic Python harness for multi-agent workflows with persistent memory, sandboxed execution, and parallel sub-agent delegation.
 
 [![CI](https://img.shields.io/badge/CI-pending-lightgrey)](.github/workflows/ci.yml)
@@ -26,7 +29,7 @@ It competes with / overlaps: `langgraph`, `crewai`, `autogen`, `deer-flow`. Its 
 ## Quickstart
 
 ```bash
-git clone https://github.com/jmiaie/af.git aegisflow
+git clone https://github.com/jmiaie/af_public.git aegisflow
 cd aegisflow
 python -m venv .venv && . .venv/bin/activate
 pip install -e ".[dev]"
