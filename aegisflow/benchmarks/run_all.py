@@ -7,11 +7,10 @@ import json
 import os
 import platform
 import sys
+import tempfile
 import time
 from pathlib import Path
-from typing import Any, Dict
-
-import psutil
+from typing import Any, Dict, Optional
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
@@ -22,12 +21,15 @@ from aegisflow.sandbox import LocalSandbox
 
 
 class Bench:
-    def __init__(self, ws="/tmp/af_bench"):
-        self.ws = Path(ws)
-        self._proc = psutil.Process(os.getpid())
+    def __init__(self, ws: Optional[str] = None):
+        # A fresh private temp dir by default (mkdtemp is mode 0700), never a
+        # fixed shared path under /tmp.
+        self.ws = Path(ws) if ws else Path(tempfile.mkdtemp(prefix="af_bench_"))
 
     def mem_mb(self):
-        return self._proc.memory_info().rss / 1024 / 1024
+        import psutil  # optional; only needed for the system/memory stats
+
+        return psutil.Process(os.getpid()).memory_info().rss / 1024 / 1024
 
     def run_all(self, iters=5) -> Dict[str, Any]:
         r = {}
@@ -51,6 +53,8 @@ class Bench:
         return r
 
     def bench_system(self):
+        import psutil  # optional; only needed for the system/memory stats
+
         vm = psutil.virtual_memory()
         return {
             "python": platform.python_version(),
@@ -238,7 +242,7 @@ def main():
     print("=" * 60)
     print("AegisFlow Benchmark Suite")
     print("=" * 60)
-    b = Bench("/tmp/af_bench")
+    b = Bench()
     results = b.run_all(iters=5)
 
     report_path = Path(os.environ.get("AEGISFLOW_BENCH_REPORT", "benchmark_report.json"))
