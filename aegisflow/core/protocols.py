@@ -80,7 +80,7 @@ class SandboxProvider(Protocol):
         ...
 
     def execute(self, command: str, **kwargs: Any) -> SandboxResult:
-        """Execute a shell command inside the sandbox."""
+        """Execute a command (argv list or shlex-split string; never a host shell)."""
         ...
 
     def cleanup(self) -> None:

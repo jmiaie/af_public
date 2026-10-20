@@ -26,11 +26,12 @@ entry points, and data-flow traces.
         │                 │                       │
         ▼                 ▼                       ▼
 ┌──────────────┐  ┌─────────────────┐   ┌─────────────────────┐
-│ Memory       │  │ Sandbox         │   │ LLM                 │
+│ Memory       │  │ Executors       │   │ LLM                 │
 │ memory/      │  │ sandbox/        │   │ llm/                │
-│  ompa_*.py   │  │  (LocalSandbox) │   │  AgenticLLM         │
-│  semantic.py │  │                 │   │  OpenAICompatible   │
-│  KG (in mem) │  │                 │   │  OpenClawSession    │
+│  ompa_*.py   │  │  Local (not     │   │  AgenticLLM         │
+│  semantic.py │  │  isolated),     │   │  OpenAICompatible   │
+│  KG (in mem) │  │  Namespace,     │   │  OpenClawSession    │
+│              │  │  Docker         │   │                     │
 └──────────────┘  └─────────────────┘   └─────────────────────┘
         ▲                                          ▲
         │                                          │
@@ -49,8 +50,8 @@ entry points, and data-flow traces.
 | Package                       | Purpose                                              | Key types                                            |
 |-------------------------------|------------------------------------------------------|------------------------------------------------------|
 | `aegisflow.orchestration`     | Lead-orchestrator + sub-agent lifecycle              | `LeadOrchestrator`, `SubAgent`                       |
-| `aegisflow.memory`            | OMPA-compatible vault, in-memory temporal KG, semantic search shim | `MemoryVault` (via `ompa_adapter`), `KnowledgeGraph`, `SemanticMemory` |
-| `aegisflow.sandbox`           | Per-thread filesystem scope                          | `LocalSandbox`, `SandboxResult`                      |
+| `aegisflow.memory`            | OMPA-compatible vault (`retrieve` is a placeholder), in-memory triple list (not persisted), semantic search shim | `MemoryVault` (via `ompa_adapter`), `KnowledgeGraph`, `SemanticMemory` |
+| `aegisflow.sandbox`           | Command executors: local (not isolated), namespace, Docker | `LocalSandbox`, `NamespaceSandbox`, `DockerSandbox`, `SandboxResult` |
 | `aegisflow.llm`               | Provider abstraction                                 | `AgenticLLM`, `OpenAICompatibleLLM`, `OpenClawSession`, `AgenticResponse`, `SubAgentResult` |
 | `aegisflow.brain`             | Ambient signal capture (GBrain port)                 | `SignalDetector`, `SignalCapture`, `SignalSummary`, `BrainFirstLookup`, `Doctor` |
 | `aegisflow.analytics`         | Session telemetry, MTB analytics, tool categorisation | `session`, `mtb`, `tool_categories`                  |
@@ -80,14 +81,15 @@ entry points, and data-flow traces.
 - **Errors:** Sub-agent errors are captured into the result dict (`status: "error"`, `error: <str>`) rather than raised; the lead orchestrator still produces a synthesis.
 - **Determinism:** No internal RNG in the control plane; LLM determinism depends on backend (set `temperature=0` for synthesis-time reproducibility).
 - **Concurrency model:** Sub-agents are independent by design. Sequential execution is the default; `delegate_and_run_async` is the recommended path for real LLMs (latency-bound).
-- **Memory model:** `MemoryVault` is markdown-on-disk via the `ompa` package; `KnowledgeGraph` is in-memory only and rebuilt from the vault on startup (no persistence layer yet).
+- **Memory model:** `MemoryVault` is markdown-on-disk via the `ompa` package; `KnowledgeGraph` is an in-memory list only: it starts empty in every process and is not rebuilt from the vault (no persistence layer yet; `db_path` is unused).
 
-## 6. Sandbox semantics — what `LocalSandbox` is and is not
+## 6. Execution backends: what `LocalSandbox` is and is not
 
-`LocalSandbox` enforces a *path scope* — every `write_file` / `read_file` is relative to `workspace_path`. It does **not**:
-- run in a separate process
+`LocalSandbox` is a **local executor, not isolated**. It enforces a *path scope*: every `write_file` / `read_file` path is resolved with `os.path.realpath` and must stay under `workspace_path` (`os.path.commonpath`), which rejects `..`, absolute paths, sibling-prefix directories and symlink escapes. `execute` runs an argv list (strings are split with `shlex.split`; no shell), in its own process session, and on timeout kills only that process group. It does **not**:
+- isolate the command from the host (same user, same filesystem, same network)
 - enforce a syscall filter (no seccomp / no AppArmor)
-- prevent symlink escape if the agent constructs an absolute path
 - restrict network access
 
-For untrusted prompts, wrap AegisFlow itself in a container or a dedicated VM. See `SECURITY.md` for the threat model.
+`NamespaceSandbox` adds Linux user/PID/mount/network namespaces via `unshare` and raises `SandboxUnavailableError` if they cannot be created; it never silently falls back to host execution. `DockerSandbox` runs each command in a throwaway container.
+
+For untrusted prompts, use one of the isolating backends and wrap AegisFlow itself in a container or a dedicated VM. See `SECURITY.md` for the threat model.

@@ -7,7 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- Removed committed personal/infrastructure data (identity file, session journal, internal PyPI notes) and stray build artifacts (`dist/` wheel, `.skill` zips, `benchmark_report.json`); added `.gitignore` rules.
+- `sandbox`: path containment now uses `realpath` + `commonpath` (fixes `../<workspace>_evil/` prefix bypass and symlink escape).
+- `sandbox`: commands no longer go through a host shell (`shell=True` removed); `execute` takes an argv list or a `shlex.split` string. **Breaking:** pipes, `&&`, redirects and globs in string commands are no longer interpreted.
+- `NamespaceSandbox` raises `SandboxUnavailableError` instead of silently running on the host when `unshare` is unusable; fixed invalid `unshare` flags.
+- Timeouts kill only the command's own process group (`start_new_session` + `os.killpg`) instead of `pkill -P <our pid>`.
+
 ### Changed
+- Docs: `LocalSandbox` described as a local executor, not isolated; README states that `MemoryVault.retrieve` is a placeholder, `KnowledgeGraph` is an unpersisted in-memory list, and the `add_triple` benchmark measures `list.append`.
 - Docs: `STATUS.md` + `docs/POSITIONING.md` — roles vs private `af` and SandFish; public clone URL points at `af_public`.
 
 ## [0.3.0] — 2026-04-26

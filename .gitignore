@@ -8,3 +8,27 @@ benchmarks/profile.stats
 
 # Local PyPI configuration (contains API token)
 .pypirc
+
+# Build artifacts — never commit
+dist/
+build/
+*.whl
+*.egg-info/
+*.skill
+
+# Generated benchmark output (LLM-integrated run writes here by default)
+/benchmark_report.json
+
+# Runtime workspaces / local data
+sandbox_workspace/
+namespace_workspace/
+docker_workspace/
+vault/
+.env
+.env.*
+!.env.example
+
+# Personal / agent session notes — keep these out of the public repo
+/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.md
+*_Identity_File.md
+PYPI_SETUP.md

@@ -50,7 +50,7 @@ class SignalDetector:
 
         # In main loop — spawn as parallel task
         signals = detector.detect(
-            user_message="I think we should approach Jordan from MiCap about the Phoenix deal",
+            user_message="I think we should approach Alex from Acme about the Q3 deal",
             is_operational=False
         )
 

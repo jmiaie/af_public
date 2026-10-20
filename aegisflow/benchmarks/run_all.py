@@ -133,7 +133,7 @@ class Bench:
     def bench_orch(self, iters=3):
         vault = MemoryVault(path=str(self.ws / "ov"))
         sb = LocalSandbox(workspace_path=str(self.ws / "os"))
-        task = "Analyze APN 167-22-045-A for real estate investment"
+        task = "Analyze a sample commercial property for investment"
         results = []
         for i in range(iters):
             orch = LeadOrchestrator(vault, sb, llm_backend="openai",
@@ -184,7 +184,7 @@ def main():
     b = Bench("/tmp/af_bench")
     results = b.run_all(iters=5)
 
-    report_path = Path("/home/ubuntu/.openclaw/workspace/sandfish/benchmark_report.json")
+    report_path = Path(os.environ.get("AEGISFLOW_BENCH_REPORT", "benchmark_report.json"))
     with open(report_path, "w") as f:
         json.dump(results, f, indent=2)
 

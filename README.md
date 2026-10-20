@@ -3,7 +3,7 @@
 > **Portfolio status (2026-09-30):** public **AegisFlow mirror** (`af_public`). Canonical private work: [`jmiaie/af`](https://github.com/jmiaie/af). SandFish ([`sandfish`](https://github.com/jmiaie/sandfish)) is the separate v1 swarm **demo**. See [`STATUS.md`](STATUS.md) and [`docs/POSITIONING.md`](docs/POSITIONING.md).
 
 
-> A security-first, framework-agnostic Python harness for multi-agent workflows with persistent memory, sandboxed execution, and parallel sub-agent delegation.
+> A framework-agnostic Python harness for multi-agent workflows with a persistent markdown memory vault, pluggable command executors (local, Linux-namespace, Docker), and parallel sub-agent delegation.
 
 [![CI](https://img.shields.io/badge/CI-pending-lightgrey)](.github/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-pending-lightgrey)](#)
@@ -13,7 +13,7 @@
 
 ## What it is
 
-AegisFlow is a Python library that wires three concerns into one harness: **persistent memory** (an OMPA-compatible markdown vault plus a temporal knowledge graph), **sandboxed execution** (per-thread filesystem scopes for tool runs), and **swarm orchestration** (a lead agent that decomposes a task and runs sub-agents in parallel against any OpenAI-compatible endpoint or an OpenClaw session). It is designed for engineers who want LangGraph-style multi-agent capability without giving up the ability to swap any layer.
+AegisFlow is a Python library that wires three concerns into one harness: **memory** (an OMPA-compatible markdown vault on disk, plus a simple in-process triple store; see [Memory: what is real today](#memory-what-is-real-today)), **command execution** (`LocalSandbox`, a local executor that is *not* isolated, plus opt-in `NamespaceSandbox` / `DockerSandbox` backends), and **swarm orchestration** (a lead agent that decomposes a task and runs sub-agents in parallel against any OpenAI-compatible endpoint or an OpenClaw session). It is designed for engineers who want LangGraph-style multi-agent capability without giving up the ability to swap any layer.
 
 It competes with / overlaps: `langgraph`, `crewai`, `autogen`, `deer-flow`. Its differentiator is the explicit separation of memory / sandbox / orchestration as pluggable interfaces, plus a published microbenchmark suite (see [Performance](#performance)).
 
@@ -65,13 +65,21 @@ Headline numbers from `benchmarks/bench_core.py` on Python 3.14 / Windows 11 / 1
 |---------------------------------------|-------------------------------:|
 | Startup (vault + sandbox + orch)      | **2.77 ms mean / 24.4 ms p95** |
 | Vault writes                          | **5,376 ops/sec** (p95 0.276 ms) |
-| Knowledge graph `add_triple`          | **1,198,265 ops/sec**          |
+| Knowledge graph `add_triple` ¹        | **1,198,265 ops/sec**          |
 | Knowledge graph `query_entity` (10k)  | **0.011 ms mean / 0.021 ms p95** |
 | Sandbox write+read cycle (Windows)    | **678 cycles/sec** (p95 2.47 ms) |
 | Orchestration end-to-end (mock LLM)   | **2.07 ms mean / 3.84 ms p95** |
 | Process RSS (cold + full suite)       | **39.7 MB**                    |
 
+¹ `KnowledgeGraph` is an in-memory Python list plus two dict indices, so this number measures a `list.append` and two dict inserts. It is **not** a database write and is not comparable to persistent graph stores.
+
 Three no-API-change wins from the audit shipped in 0.3: orchestration mean **−82.4 %**, KG query **−99.1 %** (113× faster), vault throughput **+156.9 %**. See [`docs/PERFORMANCE_AUDIT.md`](docs/PERFORMANCE_AUDIT.md) and [`BENCHMARKS.md`](BENCHMARKS.md) for methodology, regression policy, and the full optimization log.
+
+## Memory: what is real today
+
+- `MemoryVault.store_verbatim` appends markdown to files on disk. This is real and persistent.
+- `MemoryVault.retrieve` is a **placeholder**: it returns a single `"Mock retrieval result for: <query>"` string and does not search the vault. Use `SemanticMemory` (`aegisflow.memory.semantic`) or `AegisFlowMemory` (`aegisflow.memory.ompa_memory`) for actual retrieval.
+- `KnowledgeGraph` is an **in-memory list of triples** with a `valid_from` field and dict indices for lookup. It is not persisted (the `db_path` argument is currently unused), starts empty in every process, and does no time-based querying yet. "Temporal" describes the intended design, not current behaviour.
 
 ## Architecture
 
@@ -82,11 +90,11 @@ Three no-API-change wins from the audit shipped in 0.3: orchestration mean **−
 └──────────┬──────────────┬──────────────┬───────────────────┘
            │              │              │
    ┌───────▼─────┐ ┌──────▼────┐ ┌───────▼─────────┐
-   │ MemoryVault │ │ LocalSand │ │ AgenticLLM      │
-   │ (OMPA)      │ │ box       │ │ OpenAI-compat / │
-   │  + KG       │ │ + per-    │ │ OpenClaw        │
-   │  + semantic │ │   thread  │ │ + pricing       │
-   │             │ │   scopes  │ │                 │
+   │ MemoryVault │ │ Executor  │ │ AgenticLLM      │
+   │ (OMPA)      │ │ Local (not│ │ OpenAI-compat / │
+   │  + KG (RAM) │ │  isolated)│ │ OpenClaw        │
+   │  + semantic │ │ Namespace │ │ + pricing       │
+   │             │ │ Docker    │ │                 │
    └─────────────┘ └───────────┘ └─────────────────┘
         ▲                                ▲
         │   SignalDetector (brain/)      │
@@ -117,7 +125,7 @@ result = asyncio.run(swarm.delegate_and_run_async("…", max_agents=5))
 ```python
 from aegisflow.brain.signal_detector import SignalDetector
 detector = SignalDetector(vault=memory)
-summary = detector.detect("I think the Phoenix deal at MiCap looks mispriced")
+summary = detector.detect("I think the Q3 deal at Acme looks mispriced")
 print(detector.log_summary(summary))   # "Signals: 1 ideas, 1 entities, 0 facts (…)"
 ```
 
@@ -128,7 +136,7 @@ print(detector.log_summary(summary))   # "Signals: 1 ideas, 1 entities, 0 facts 
 | `OPENAI_API_KEY`            | —                        | Used by the `openai` backend.                                |
 | `OPENAI_BASE_URL`           | `https://api.openai.com` | Point at vLLM / Ollama / OpenRouter for self-hosted models.  |
 | `AEGISFLOW_VAULT_PATH`      | `./vault`                | Default `MemoryVault` root.                                  |
-| `AEGISFLOW_SANDBOX_PATH`    | `./sandbox_workspace`    | Default `LocalSandbox` root.                                 |
+| `AEGISFLOW_SANDBOX_PATH`    | `./sandbox_workspace`    | Default `LocalSandbox` (local executor) root.                |
 | `AEGISFLOW_LOG_LEVEL`       | `INFO`                   | Standard logging level.                                      |
 | `OPENCLAW_SESSION_BIN`      | `claw`                   | Path to the OpenClaw CLI if using the `openclaw` backend.    |
 
@@ -145,7 +153,9 @@ See `.env.example` for the full list.
 
 ## Security
 
-This package executes LLM-driven commands inside `LocalSandbox`, which scopes file access but is **not** an OS-level isolation boundary. Treat `LocalSandbox` like a `chroot` hint, not a security primitive — run the harness inside a container or a dedicated VM if you accept untrusted prompts.
+**`LocalSandbox` is a local executor, not isolated.** It confines `read_file` / `write_file` to its workspace (resolved with `realpath` and checked with `commonpath`, so `..` and symlink escapes are rejected) and runs commands without a shell (argv lists, or strings split with `shlex.split`), but those commands still run on the host with your user's privileges, filesystem and network. It is **not** a security boundary.
+
+If commands can come from untrusted input, including LLM output, use `NamespaceSandbox` (Linux `unshare`; raises `SandboxUnavailableError` instead of falling back to the host when namespaces are unavailable) or `DockerSandbox`, and run the harness itself inside a container or a dedicated VM.
 
 Disclosure policy and the threat model live in [`SECURITY.md`](SECURITY.md). Please report vulnerabilities privately.
 
