@@ -39,7 +39,7 @@ Baseline: `benchmarks/baseline.json`. Current: `benchmarks/latest.json`.
 |-----|---------:|-------|
 | Cold startup (vault+sandbox+orchestrator) | **4.07 ms mean / 28.5 ms p95** | Dir cache eliminates repeated makedirs |
 | Vault write throughput | **5,890 ops/sec** (0.17 ms mean / 0.22 ms p95) | Open-only is the floor now |
-| Knowledge graph add | **1,206,870 ops/sec** | In-memory list append + dict index insert |
+| Knowledge graph add | **1,206,870 ops/sec** | In-memory list append + dict index insert (not a DB write) |
 | Knowledge graph query (10k triples) | **0.007 ms mean / 0.011 ms p95** | O(1 + k) dict lookup |
 | Sandbox write+read cycle | **721 cycles/sec** (1.39 ms mean / 1.99 ms p95) | Windows/OneDrive; Linux expected ~3k/sec |
 | Orchestration end-to-end (mock LLM, 3 sub-agents) | **1.25 ms mean / 1.59 ms p95** | Control-plane overhead only |
@@ -139,7 +139,7 @@ this is expected to improve to ~3,000 cycles/sec.
 
 150 sub-agents spawned across 50 tasks. This is the **control plane only** — a
 real LLM will dominate end-to-end latency (see `aegisflow/benchmarks/run_all.py`
-and `benchmark_report.json` for the LLM-integrated numbers).
+and BENCHMARKS.md §4 for the LLM-integrated numbers).
 
 ### 3.6 Memory footprint
 

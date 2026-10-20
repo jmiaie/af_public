@@ -4,7 +4,7 @@ AegisFlow — Universal, Security-First Multi-Agent Hybrid System.
 Core exports:
 - Orchestration: LeadOrchestrator, SubAgent, AgenticLLM
 - Memory: MemoryVault, KnowledgeGraph, PalaceNavigation
-- Sandbox: LocalSandbox, DockerSandbox, SandboxResult
+- Sandbox: LocalSandbox (local executor, not isolated), DockerSandbox, SandboxResult
 - LLM: OpenAICompatibleLLM, OpenClawSession, AgenticResponse, SubAgentResult
 - Core: Protocols (LLMProvider, SandboxProvider, MemoryProvider, Tool)
 - Core: Errors (AegisFlowError hierarchy)

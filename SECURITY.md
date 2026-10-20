@@ -29,11 +29,11 @@ Response targets:
 In scope:
 - `aegisflow.*` Python modules
 - `Dockerfile` / `docker-compose.yml`
-- The bundled `.skill` archives in this repo
+- CI workflows under `.github/workflows/`
 
 Out of scope:
 - Vulnerabilities in upstream dependencies (`ompa`, `fastapi`, `uvicorn`, `pydantic`) — please report those upstream. We will pull patched versions promptly.
-- Denial-of-service against `LocalSandbox` from a trusted local caller (use a process supervisor / cgroups for that).
+- Denial-of-service against `LocalSandbox` (a local executor, not isolated) from a trusted local caller (use a process supervisor / cgroups for that).
 
 ## Dependency scanning posture
 
@@ -71,17 +71,17 @@ Out of scope:
 
 | # | Threat                                                                                  | Mitigation today                                          | Gap                                              |
 |--:|-----------------------------------------------------------------------------------------|-----------------------------------------------------------|--------------------------------------------------|
-| 1 | Prompt injection causes the LLM to emit a path-escaping `write_file("..\\..\\etc\\…")`. | `LocalSandbox` joins paths under `workspace_path`.        | No explicit `pathlib.Path.resolve()`-vs-`workspace_path` containment check; symlink escape unverified. |
+| 1 | Prompt injection causes the LLM to emit a path-escaping `write_file("..\\..\\etc\\…")`. | Paths are resolved with `realpath` and must share `workspace_path` as `commonpath` (rejects `..`, absolute, sibling-prefix and symlink escapes); covered by tests. | TOCTOU: a symlink created between check and open is not prevented. |
 | 2 | Credential exfiltration through synthesised content.                                    | Credentials are read from env only; never echoed.         | No outbound-content scanning. Consider a guardrail middleware. |
 | 3 | Sub-agent ignores task scope and triggers a follow-up LLM call costing money.            | `max_agents` cap; `max_tokens=2048` per call.             | No global $-cap; budget per session not enforced. |
 | 4 | Vault contents accessed by a process on the same host.                                  | OS-level filesystem permissions only.                     | Encryption-at-rest is out of scope at v0.3.       |
-| 5 | Memory-graph poisoning via `add_triple` from a malicious sub-agent.                     | KG is in-memory and rebuilt from vault on start.          | Vault writes by sub-agents are not signed or attributed; provenance is implicit. |
+| 5 | Memory-graph poisoning via `add_triple` from a malicious sub-agent.                     | KG is in-memory only and not persisted.                   | Vault writes by sub-agents are not signed or attributed; provenance is implicit. |
 | 6 | Dependency-chain compromise (e.g., typosquatted `ompa`).                                | Pinned name and version range.                            | No SLSA provenance or signed wheels yet.          |
 | 7 | Logged prompts leak PII to disk / observability tooling.                                | Logger is opt-in; `INFO` truncates to 80 chars in `SubAgent.execute`. | No structured PII redaction; consider a redactor. |
 
 ### Out-of-the-box hardening recommendations for operators
 
-1. Run AegisFlow inside a container; treat `LocalSandbox` only as a path scope.
+1. Run AegisFlow inside a container. `LocalSandbox` is a local executor, not isolated: treat it only as a path scope, and use `NamespaceSandbox` or `DockerSandbox` for LLM-generated commands.
 2. Set a hard `max_agents` and a wall-clock timeout per session.
 3. Keep `OPENAI_API_KEY` in a secrets manager — never check it into the vault.
 4. If integrating IM channels (like DeerFlow does), bind to 127.0.0.1 unless an authentication gateway is in front.

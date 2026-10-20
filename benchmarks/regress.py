@@ -31,7 +31,11 @@ def walk_and_compare(baseline_data, candidate_data, path="", tolerance=1.20):
         return fails
 
     # We gate on p95_ms values
-    if path.endswith("p95_ms") and isinstance(baseline_data, (int, float)) and isinstance(candidate_data, (int, float)):
+    if (
+        path.endswith("p95_ms")
+        and isinstance(baseline_data, (int, float))
+        and isinstance(candidate_data, (int, float))
+    ):
         if baseline_data > 0 and candidate_data > baseline_data * tolerance:
             diff = (candidate_data / baseline_data) - 1.0
             fails.append((path, baseline_data, candidate_data, diff))

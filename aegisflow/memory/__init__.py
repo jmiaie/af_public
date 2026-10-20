@@ -19,8 +19,8 @@ from aegisflow.memory.semantic import SemanticMemory
 
 __all__ = [
     "AegisFlowMemory",  # primary interface — wires GBrain + OMPA
-    "MemoryVault",      # backward compat
+    "MemoryVault",  # backward compat
     "KnowledgeGraph",  # backward compat
-    "PalaceNavigation", # backward compat
-    "SemanticMemory",   # native semantic fallback
+    "PalaceNavigation",  # backward compat
+    "SemanticMemory",  # native semantic fallback
 ]

@@ -41,17 +41,13 @@ class TestAgenticResponse:
 class TestSubAgentResult:
     def test_to_dict_with_response(self):
         resp = AgenticResponse(content="result", model="m")
-        r = SubAgentResult(
-            agent_id="a1", session_key="sk", status="success", response=resp
-        )
+        r = SubAgentResult(agent_id="a1", session_key="sk", status="success", response=resp)
         d = r.to_dict()
         assert d["status"] == "success"
         assert d["response"]["content"] == "result"
 
     def test_to_dict_without_response(self):
-        r = SubAgentResult(
-            agent_id="a1", session_key="sk", status="error", error="boom"
-        )
+        r = SubAgentResult(agent_id="a1", session_key="sk", status="error", error="boom")
         d = r.to_dict()
         assert d["response"] is None
         assert d["error"] == "boom"

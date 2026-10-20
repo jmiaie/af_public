@@ -104,8 +104,8 @@ Hierarchical agent architecture:
 
 The OMPA (Obsidian-Memory-Palace-Agnostic) adapter provides:
 - Local semantic search (no API calls)
-- SQLite-based knowledge graph
-- Temporal fact storage with provenance
+- In-memory knowledge graph (a list of triples with a `valid_from` field; not yet persisted, no temporal queries yet)
+- Vault retrieval in `MemoryVault.retrieve` is currently a placeholder (see `SemanticMemory` for real search)
 - Zero external dependencies
 
 **Cost Savings**: $150+/month vs. Zep Cloud

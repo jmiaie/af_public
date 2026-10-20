@@ -1,6 +1,7 @@
 """
 Tests for async orchestration and fallback counter.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -13,6 +14,7 @@ from aegisflow.sandbox import LocalSandbox
 
 class _FakeLLM:
     backend = "fake"
+
     def chat(self, messages, **kwargs):
         user_msg = next((m["content"] for m in messages if m["role"] == "user"), "")
         if "Decompose" in user_msg:
@@ -22,14 +24,17 @@ class _FakeLLM:
         else:
             content = "Mocked."
         return SimpleNamespace(content=content, tokens_used=0)
+
     def complete(self, prompt, **kwargs):
         return self.chat([{"role": "user", "content": prompt}])
 
 
 class _FailingLLM:
     backend = "fail"
+
     def chat(self, messages, **kwargs):
         raise RuntimeError("LLM offline")
+
     def complete(self, prompt, **kwargs):
         raise RuntimeError("LLM offline")
 

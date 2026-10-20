@@ -50,10 +50,12 @@ class OllamaLLM:
 
         ollama_messages = []
         for msg in messages:
-            ollama_messages.append({
-                "role": msg.get("role", "user"),
-                "content": msg.get("content", ""),
-            })
+            ollama_messages.append(
+                {
+                    "role": msg.get("role", "user"),
+                    "content": msg.get("content", ""),
+                }
+            )
 
         body = {
             "model": model,
@@ -157,6 +159,7 @@ class OllamaOpenAIProxy:
         timeout: int = 120,
     ):
         from aegisflow.llm.adapters import OpenAICompatibleLLM
+
         self._impl = OpenAICompatibleLLM(
             base_url=base_url,
             api_key=api_key,

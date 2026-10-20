@@ -30,7 +30,9 @@ class MemoryVault:
             os.makedirs(d, exist_ok=True)
             self._known_dirs.add(d)
 
-    def store_verbatim(self, content: str, category: str = "work", filename: str = "notes.md") -> None:
+    def store_verbatim(
+        self, content: str, category: str = "work", filename: str = "notes.md"
+    ) -> None:
         """Stores unsummarized, verbatim context into the vault."""
         # Perf §5.1: only call makedirs when the target dir is new to this instance.
         cat_path = os.path.join(self.path, category)
@@ -43,13 +45,22 @@ class MemoryVault:
             f.write(f"\n---\n{content}\n")
 
     def retrieve(self, query: str) -> List[str]:
-        """Placeholder for semantic search across the vault."""
+        """Placeholder: does NOT search the vault yet.
+
+        Always returns a single ``"Mock retrieval result for: <query>"`` string.
+        Use :class:`aegisflow.memory.semantic.SemanticMemory` or ``aegisflow.memory.ompa_memory.AegisFlowMemory``
+        for real retrieval.
+        """
         return [f"Mock retrieval result for: {query}"]
 
 
 class KnowledgeGraph:
     """
-    Temporal Knowledge Graph for tracking entity relationships over time.
+    In-memory triple store with a ``valid_from`` field per triple.
+
+    Triples live in a Python list (plus dict indices for lookup). Nothing is
+    persisted: ``db_path`` is accepted for API compatibility but unused, and
+    no time-based queries are implemented yet.
     """
 
     def __init__(self, db_path: str = "./vault/kg.sqlite"):
@@ -59,8 +70,9 @@ class KnowledgeGraph:
         self._by_subject: Dict[str, List[Dict[str, str]]] = {}
         self._by_object: Dict[str, List[Dict[str, str]]] = {}
 
-    def add_triple(self, subject: str, predicate: str, object_val: str,
-                   valid_from: Optional[str] = None) -> None:
+    def add_triple(
+        self, subject: str, predicate: str, object_val: str, valid_from: Optional[str] = None
+    ) -> None:
         """Add a temporal fact to the graph."""
         triple = {
             "subject": subject,

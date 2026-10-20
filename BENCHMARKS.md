@@ -25,7 +25,7 @@ stability, build matrix, and footprint.
 |-------------------------------------------------|--------:|--------:|--------:|----------:|
 | Startup (`MemoryVault + LocalSandbox + Lead`)   | 2.77 ms | 24.4 ms | 24.4 ms | —         |
 | Vault `store_verbatim` (markdown append)        | 0.186 ms| 0.276 ms| 0.374 ms| **5,376** |
-| KG `add_triple`                                 | 0.0008 ms | 0.0016 ms | 0.0026 ms | **1,198,265** |
+| KG `add_triple` (in-memory `list.append`)        | 0.0008 ms | 0.0016 ms | 0.0026 ms | **1,198,265** |
 | KG `query_entity` (10k triples, 200 entities)   | 0.011 ms | 0.021 ms | 0.032 ms | — |
 | Sandbox write+read cycle (Windows / OneDrive)   | 1.47 ms | 2.47 ms | 3.00 ms | **678**   |
 | Orchestration end-to-end (mock LLM, 3 agents)   | 2.07 ms | 3.84 ms | 5.21 ms | — |
@@ -57,7 +57,7 @@ Wins came from three no-API-change optimizations (see audit §5.1 / §5.2 / §5.
 
 ---
 
-## 4. LLM-integrated end-to-end (from `benchmark_report.json`)
+## 4. LLM-integrated end-to-end (historical run of `python -m aegisflow.benchmarks.run_all`)
 
 Run on Python 3.12 / Ollama / 4 vCPU 8 GB:
 

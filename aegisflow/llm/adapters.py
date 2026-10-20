@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class AgenticResponse:
     """Structured response from any LLM call."""
+
     content: str
     raw: Any = None
     model: str = "unknown"
@@ -47,6 +48,7 @@ class AgenticResponse:
 @dataclass
 class SubAgentResult:
     """Result from a spawned sub-agent session."""
+
     agent_id: str
     session_key: str
     status: str  # "success", "error", "timeout"
@@ -140,9 +142,7 @@ class OpenAICompatibleLLM:
             )
         except urllib.error.HTTPError as e:
             if e.code in (401, 403):
-                raise LLMAuthError(
-                    f"Authentication failed ({e.code})", cause=e
-                ) from e
+                raise LLMAuthError(f"Authentication failed ({e.code})", cause=e) from e
             elif e.code == 429:
                 retry_after = float(e.headers.get("Retry-After", 5))
                 raise LLMRateLimitError(
@@ -151,28 +151,18 @@ class OpenAICompatibleLLM:
                     cause=e,
                 ) from e
             elif e.code >= 500:
-                raise LLMProviderError(
-                    f"Provider error ({e.code})", cause=e
-                ) from e
+                raise LLMProviderError(f"Provider error ({e.code})", cause=e) from e
             else:
-                raise AegisFlowLLMError(
-                    f"LLM HTTP error ({e.code})", cause=e
-                ) from e
+                raise AegisFlowLLMError(f"LLM HTTP error ({e.code})", cause=e) from e
         except urllib.error.URLError as e:
             if "timed out" in str(e).lower():
-                raise LLMTimeoutError(
-                    "LLM request timed out", cause=e
-                ) from e
-            raise AegisFlowLLMError(
-                f"LLM call failed: {e}", cause=e
-            ) from e
+                raise LLMTimeoutError("LLM request timed out", cause=e) from e
+            raise AegisFlowLLMError(f"LLM call failed: {e}", cause=e) from e
         except AegisFlowLLMError:
             raise  # Don't re-wrap our own errors
         except Exception as e:
             logger.error(f"LLM call failed: {e}")
-            raise AegisFlowLLMError(
-                f"LLM call failed: {e}", cause=e
-            ) from e
+            raise AegisFlowLLMError(f"LLM call failed: {e}", cause=e) from e
 
     def complete(self, prompt: str, model: Optional[str] = None, **kwargs: Any) -> AgenticResponse:
         """Simple single-shot completion (converts to chat format)."""
@@ -199,7 +189,9 @@ class OpenClawSession:
             "OPENCLAW_GATEWAY_URL", "http://localhost:18789"
         )
         self.auth_token = auth_token or os.environ.get("OPENCLAW_AUTH_TOKEN", "")
-        self.default_model = default_model or os.environ.get("OPENCLAW_MODEL", "myclaw/gemini-3-flash")
+        self.default_model = default_model or os.environ.get(
+            "OPENCLAW_MODEL", "myclaw/gemini-3-flash"
+        )
         self.timeout_seconds = timeout_seconds
 
         # Lazy import OpenClaw tools when available
@@ -213,6 +205,7 @@ class OpenClawSession:
             try:
                 # Import the openclaw sessions tool functions if accessible
                 import openclaw  # type: ignore[import-not-found]
+
                 self._openclaw = openclaw
                 logger.info("OpenClaw modules loaded successfully")
             except ImportError:
@@ -231,6 +224,7 @@ class OpenClawSession:
         Returns SubAgentResult with the agent's response.
         """
         import time
+
         self._get_openclaw_tools()
 
         agent_id = agent_id or f"aegisflow-sub-{uuid.uuid4().hex[:8]}"
@@ -338,8 +332,7 @@ class AgenticLLM:
             self._impl = self._REGISTRY[backend](**(config or {}))
         else:
             raise ValueError(
-                f"Unknown LLM backend '{backend}'. "
-                f"Available: {self.available_backends()}"
+                f"Unknown LLM backend '{backend}'. " f"Available: {self.available_backends()}"
             )
 
         self.backend = backend

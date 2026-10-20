@@ -1,6 +1,7 @@
 """
 Tests for aegisflow.core — protocols and error taxonomy.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -129,6 +130,7 @@ class TestCLI:
         import argparse
 
         from aegisflow.__main__ import cmd_version
+
         cmd_version(argparse.Namespace())
         out = capsys.readouterr().out
         assert "AegisFlow" in out
@@ -136,12 +138,14 @@ class TestCLI:
 
     def test_parser_builds(self):
         from aegisflow.__main__ import build_parser
+
         parser = build_parser()
         args = parser.parse_args(["version"])
         assert args.command == "version"
 
     def test_doctor_parser(self):
         from aegisflow.__main__ import build_parser
+
         parser = build_parser()
         args = parser.parse_args(["doctor", "--skills-dir", "/tmp/skills", "--json"])
         assert args.command == "doctor"
@@ -149,6 +153,7 @@ class TestCLI:
 
     def test_run_parser(self):
         from aegisflow.__main__ import build_parser
+
         parser = build_parser()
         args = parser.parse_args(["run", "Analyze logs", "--agents", "5", "--json"])
         assert args.command == "run"
