@@ -18,10 +18,10 @@ from typing import Optional
 
 
 class ModelTier(str, Enum):
-    PRIMARY = "nvidia"       # NVIDIA NIM
+    PRIMARY = "nvidia"  # NVIDIA NIM
     SECONDARY_A = "gemini-flash-lite"  # Gemini 2.5 Flash-Lite
-    SECONDARY_B = "gemini-flash"       # Gemini 2.0 Flash
-    TERTIARY = "copilot"     # GitHub Copilot
+    SECONDARY_B = "gemini-flash"  # Gemini 2.0 Flash
+    TERTIARY = "copilot"  # GitHub Copilot
 
 
 # Map model string prefixes → tier

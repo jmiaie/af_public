@@ -19,6 +19,7 @@ import time
 def cmd_version(args: argparse.Namespace) -> None:
     """Print version and system info."""
     from aegisflow import __version__
+
     print(f"AegisFlow v{__version__}")
     print(f"Python {sys.version}")
 
@@ -42,8 +43,7 @@ def cmd_doctor(args: argparse.Namespace) -> None:
                     "status": c.status.value,
                     "message": c.message,
                     "issues": [
-                        {"type": i.type, "skill": i.skill, "action": i.action}
-                        for i in c.issues
+                        {"type": i.type, "skill": i.skill, "action": i.action} for i in c.issues
                     ],
                 }
                 for c in report.checks
@@ -60,6 +60,7 @@ def cmd_bench(args: argparse.Namespace) -> None:
     """Run the control-plane benchmark suite."""
     # Import here so the rest of the CLI stays light.
     from pathlib import Path
+
     if not Path("benchmarks/bench_core.py").exists():
         print("Error: benchmarks/bench_core.py not found in the current directory.")
         print("Run from the AegisFlow repo root.")
@@ -73,6 +74,7 @@ def cmd_bench(args: argparse.Namespace) -> None:
 
     # bench_core.main() uses argparse internally; call it via subprocess
     import subprocess
+
     cmd = [sys.executable, "benchmarks/bench_core.py"] + bench_args
     result = subprocess.run(cmd, cwd=".")
     sys.exit(result.returncode)

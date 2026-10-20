@@ -46,6 +46,7 @@ from aegisflow.sandbox import LocalSandbox  # noqa: E402
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _time_ms(fn: Callable[[], Any]) -> float:
     start = time.perf_counter()
     fn()
@@ -90,6 +91,7 @@ class FakeLLM:
 # Benchmarks
 # ---------------------------------------------------------------------------
 
+
 class BenchmarkSuite:
     def __init__(self, workspace: Path) -> None:
         self.workspace = workspace
@@ -99,6 +101,7 @@ class BenchmarkSuite:
 
     def bench_system(self) -> Dict[str, Any]:
         import platform
+
         info = {
             "python": platform.python_version(),
             "platform": platform.platform(),
@@ -106,13 +109,16 @@ class BenchmarkSuite:
         }
         try:
             import psutil  # type: ignore[import-not-found]
+
             vm = psutil.virtual_memory()
-            info.update({
-                "cpu_logical": psutil.cpu_count(logical=True),
-                "cpu_physical": psutil.cpu_count(logical=False),
-                "ram_total_gb": round(vm.total / 1024**3, 1),
-                "ram_avail_gb": round(vm.available / 1024**3, 1),
-            })
+            info.update(
+                {
+                    "cpu_logical": psutil.cpu_count(logical=True),
+                    "cpu_physical": psutil.cpu_count(logical=False),
+                    "ram_total_gb": round(vm.total / 1024**3, 1),
+                    "ram_avail_gb": round(vm.available / 1024**3, 1),
+                }
+            )
         except ImportError:
             pass
         return info
@@ -144,8 +150,13 @@ class BenchmarkSuite:
         payload = "x" * 256
         samples = []
         for i in range(n):
-            samples.append(_time_ms(lambda i=i: vault.store_verbatim(
-                content=payload, category="work", filename=f"n{i % 20}.md")))
+            samples.append(
+                _time_ms(
+                    lambda i=i: vault.store_verbatim(
+                        content=payload, category="work", filename=f"n{i % 20}.md"
+                    )
+                )
+            )
         total_s = sum(samples) / 1000.0
         return {
             "operations": n,
@@ -161,11 +172,10 @@ class BenchmarkSuite:
         kg = KnowledgeGraph()
         add_samples = []
         for i in range(n):
-            add_samples.append(_time_ms(lambda i=i: kg.add_triple(
-                f"E{i % 200}", "rel", f"E{(i + 1) % 200}")))
-        query_samples = [
-            _time_ms(lambda i=i: kg.query_entity(f"E{i % 200}")) for i in range(500)
-        ]
+            add_samples.append(
+                _time_ms(lambda i=i: kg.add_triple(f"E{i % 200}", "rel", f"E{(i + 1) % 200}"))
+            )
+        query_samples = [_time_ms(lambda i=i: kg.query_entity(f"E{i % 200}")) for i in range(500)]
         add_total = sum(add_samples) / 1000.0
         return {
             "add": {
@@ -191,10 +201,14 @@ class BenchmarkSuite:
         samples = []
         for i in range(n):
             rel = f"workspace/b{i}.txt"
-            samples.append(_time_ms(lambda rel=rel: (
-                sb.write_file(rel, payload),
-                sb.read_file(rel),
-            )))
+            samples.append(
+                _time_ms(
+                    lambda rel=rel: (
+                        sb.write_file(rel, payload),
+                        sb.read_file(rel),
+                    )
+                )
+            )
         total_s = sum(samples) / 1000.0
         return {
             "cycles": n,
@@ -213,8 +227,7 @@ class BenchmarkSuite:
         lead.llm = FakeLLM()
 
         samples = [
-            _time_ms(lambda i=i: lead.delegate_and_run(f"Benchmark task {i}"))
-            for i in range(n)
+            _time_ms(lambda i=i: lead.delegate_and_run(f"Benchmark task {i}")) for i in range(n)
         ]
         return {
             "tasks": n,
@@ -235,7 +248,9 @@ class BenchmarkSuite:
         kg = KnowledgeGraph()
         for i in range(5000):
             kg.add_triple(f"E{i % 200}", "rel", f"E{(i + 1) % 200}")
-        sandboxes = [LocalSandbox(workspace_path=str(self.workspace / f"mem-s-{i}")) for i in range(100)]
+        sandboxes = [
+            LocalSandbox(workspace_path=str(self.workspace / f"mem-s-{i}")) for i in range(100)
+        ]
 
         after_snap = tracemalloc.take_snapshot()
         diff = after_snap.compare_to(baseline_snap, "lineno")
@@ -253,6 +268,7 @@ class BenchmarkSuite:
             import os as _os
 
             import psutil  # type: ignore[import-not-found]
+
             proc = psutil.Process(_os.getpid())
             result["process_rss_mb"] = round(proc.memory_info().rss / 1024 / 1024, 1)
         except ImportError:
@@ -300,8 +316,12 @@ class BenchmarkSuite:
         lines += ["", "## Executive Summary", "", "| KPI | Value |", "|-----|-------|"]
 
         s, v, k, sb, o, m = (
-            r["startup"], r["vault_writes"], r["knowledge_graph"],
-            r["sandbox_io"], r["orchestration"], r["memory_footprint"],
+            r["startup"],
+            r["vault_writes"],
+            r["knowledge_graph"],
+            r["sandbox_io"],
+            r["orchestration"],
+            r["memory_footprint"],
         )
         lines += [
             f"| Startup (mean) | {s['mean_ms']:.2f} ms |",
@@ -323,6 +343,7 @@ class BenchmarkSuite:
 # ---------------------------------------------------------------------------
 # Entrypoint
 # ---------------------------------------------------------------------------
+
 
 def run_profile(output: Path, workspace: Path) -> None:
     """Profile the orchestration hot path with cProfile."""
@@ -352,8 +373,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="AegisFlow control-plane benchmarks.")
     parser.add_argument("--output", type=Path, help="Write JSON results to this path.")
     parser.add_argument("--markdown", type=Path, help="Write markdown report to this path.")
-    parser.add_argument("--profile", action="store_true",
-                        help="Also run cProfile on the orchestration hot path.")
+    parser.add_argument(
+        "--profile", action="store_true", help="Also run cProfile on the orchestration hot path."
+    )
     parser.add_argument("--profile-out", type=Path, default=Path("benchmarks/profile.stats"))
     args = parser.parse_args()
 

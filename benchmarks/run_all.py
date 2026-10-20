@@ -30,10 +30,10 @@ class BenchmarkRunner:
         print("🌵 SandFish Benchmark Suite")
         print("=" * 50)
 
-        self.results['startup'] = await self.benchmark_startup()
-        self.results['agent_creation'] = await self.benchmark_agent_creation()
-        self.results['simulation'] = await self.benchmark_simulation()
-        self.results['memory'] = await self.benchmark_memory()
+        self.results["startup"] = await self.benchmark_startup()
+        self.results["agent_creation"] = await self.benchmark_agent_creation()
+        self.results["simulation"] = await self.benchmark_simulation()
+        self.results["memory"] = await self.benchmark_memory()
 
         return self.results
 
@@ -48,11 +48,7 @@ class BenchmarkRunner:
             elapsed = time.time() - start
             times.append(elapsed)
 
-        return {
-            'mean': sum(times) / len(times),
-            'min': min(times),
-            'max': max(times)
-        }
+        return {"mean": sum(times) / len(times), "min": min(times), "max": max(times)}
 
     async def benchmark_agent_creation(self) -> Dict[str, float]:
         """Benchmark agent creation throughput."""
@@ -69,10 +65,7 @@ class BenchmarkRunner:
                 await agent.initialize({})
             elapsed = time.time() - start
 
-            results[f'{count}_agents'] = {
-                'time': elapsed,
-                'throughput': count / elapsed
-            }
+            results[f"{count}_agents"] = {"time": elapsed, "throughput": count / elapsed}
 
         return results
 
@@ -82,10 +75,7 @@ class BenchmarkRunner:
 
         orch = create_orchestrator("/tmp/bench-vault")
         config = SimulationConfig(
-            name="Benchmark",
-            description="Performance test",
-            max_rounds=100,
-            num_agents=50
+            name="Benchmark", description="Performance test", max_rounds=100, num_agents=50
         )
 
         sim_id = orch.create_simulation(config)
@@ -95,9 +85,9 @@ class BenchmarkRunner:
         elapsed = time.time() - start
 
         return {
-            'total_time': elapsed,
-            'rounds_per_sec': result.rounds_completed / elapsed,
-            'agents_per_sec': (result.rounds_completed * config.num_agents) / elapsed
+            "total_time": elapsed,
+            "rounds_per_sec": result.rounds_completed / elapsed,
+            "agents_per_sec": (result.rounds_completed * config.num_agents) / elapsed,
         }
 
     async def benchmark_memory(self) -> Dict[str, Any]:
@@ -124,9 +114,9 @@ class BenchmarkRunner:
         with_agents = process.memory_info().rss / 1024 / 1024
 
         return {
-            'baseline_mb': baseline,
-            'with_100_agents_mb': with_agents,
-            'per_agent_mb': (with_agents - baseline) / 100
+            "baseline_mb": baseline,
+            "with_100_agents_mb": with_agents,
+            "per_agent_mb": (with_agents - baseline) / 100,
         }
 
     def generate_report(self) -> str:
@@ -146,10 +136,10 @@ class BenchmarkRunner:
             "",
             "```json",
             json.dumps(self.results, indent=2),
-            "```"
+            "```",
         ]
 
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
 
 async def main():
@@ -164,7 +154,7 @@ async def main():
 
     # Save to file
     output_file = Path("benchmark_report.json")
-    with open(output_file, 'w') as f:
+    with open(output_file, "w") as f:
         json.dump(results, f, indent=2)
 
     print(f"\n💾 Results saved to {output_file}")

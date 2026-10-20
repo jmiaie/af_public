@@ -7,11 +7,12 @@ from dataclasses import dataclass
 
 # ─── Pricing tables ────────────────────────────────────────────────────────────
 
+
 @dataclass
 class ModelPricing:
-    input: float       # per million tokens
-    output: float      # per million tokens
-    cache_write: float # per million tokens
+    input: float  # per million tokens
+    output: float  # per million tokens
+    cache_write: float  # per million tokens
     cache_read: float  # per million tokens
 
 

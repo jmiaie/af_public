@@ -90,9 +90,7 @@ class TestSignalDetector:
     def test_original_thinking_captured(self):
         vault = _StubVault()
         detector = SignalDetector(vault=vault)
-        summary = detector.detect(
-            "I think the AegisFlow memory system should use a temporal graph"
-        )
+        summary = detector.detect("I think the AegisFlow memory system should use a temporal graph")
         assert summary.ideas >= 1
 
     def test_company_extraction(self):
@@ -155,8 +153,6 @@ class TestBrainDoctor:
         doctor = BrainDoctor(skills_dir=skills, vault_path=vault)
         report = doctor.run()
         # Should warn about missing directories (people, companies, etc.)
-        structure_check = next(
-            (c for c in report.checks if c.name == "vault_structure"), None
-        )
+        structure_check = next((c for c in report.checks if c.name == "vault_structure"), None)
         assert structure_check is not None
         assert structure_check.status == HealthStatus.WARN

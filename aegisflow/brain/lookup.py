@@ -20,7 +20,7 @@ import logging
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from aegisflow.memory.ompa_memory import AegisFlowMemory
@@ -157,9 +157,7 @@ class BrainFirstLookup:
 
             results = ompa.search(f"who is {query}", limit=3, hybrid=True)
             if results:
-                content = "\n".join(
-                    f"[{r.path}] {r.content_excerpt}" for r in results
-                )
+                content = "\n".join(f"[{r.path}] {r.content_excerpt}" for r in results)
                 return BrainLookupResult(
                     found=True,
                     page_content=content[:500],
@@ -215,8 +213,7 @@ class BrainFirstLookup:
             triples = ompa.kg_query(entity)
             if triples:
                 content = "\n".join(
-                    f"{t['subject']} —{t['predicate']}→ {t['object']}"
-                    for t in triples[:10]
+                    f"{t['subject']} —{t['predicate']}→ {t['object']}" for t in triples[:10]
                 )
                 return BrainLookupResult(
                     found=True,
@@ -292,10 +289,12 @@ class BrainFirstLookup:
             if "|" in line:
                 parts = line.split("|")
                 if len(parts) >= 2:
-                    entries.append({
-                        "date": parts[0].strip(),
-                        "entry": parts[1].strip(),
-                    })
+                    entries.append(
+                        {
+                            "date": parts[0].strip(),
+                            "entry": parts[1].strip(),
+                        }
+                    )
         return entries
 
 

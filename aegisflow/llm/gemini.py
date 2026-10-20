@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class GeminiConfig:
     """Configuration for Gemini API."""
+
     api_key: str
     model: str = "gemini-2.0-flash"
     project_id: Optional[str] = None  # For Vertex AI
@@ -66,9 +67,7 @@ class GeminiLLM:
         headers = {"Content-Type": "application/json"}
         body = json.dumps(payload).encode("utf-8")
 
-        req = urllib.request.Request(
-            url, data=body, headers=headers, method="POST"
-        )
+        req = urllib.request.Request(url, data=body, headers=headers, method="POST")
 
         try:
             with urllib.request.urlopen(req, timeout=self.config.timeout) as resp:
@@ -143,15 +142,17 @@ class GeminiLLM:
             gemini_tools = []
             for tool in tools:
                 func = tool.get("function", {})
-                gemini_tools.append({
-                    "functionDeclarations": [
-                        {
-                            "name": func.get("name"),
-                            "description": func.get("description", ""),
-                            "parameters": func.get("parameters", {}),
-                        }
-                    ]
-                })
+                gemini_tools.append(
+                    {
+                        "functionDeclarations": [
+                            {
+                                "name": func.get("name"),
+                                "description": func.get("description", ""),
+                                "parameters": func.get("parameters", {}),
+                            }
+                        ]
+                    }
+                )
             payload["tools"] = gemini_tools
 
         # Add safety settings if provided
@@ -169,10 +170,7 @@ class GeminiLLM:
 
             # Count token usage
             usage = data.get("usageMetadata", {})
-            tokens_used = (
-                usage.get("promptTokenCount", 0)
-                + usage.get("candidatesTokenCount", 0)
-            )
+            tokens_used = usage.get("promptTokenCount", 0) + usage.get("candidatesTokenCount", 0)
 
             finish_reason = candidate.get("finishReason", "STOP")
 
@@ -182,8 +180,10 @@ class GeminiLLM:
                 model=model,
                 tokens_used=tokens_used,
                 finish_reason=finish_reason,
-                metadata={"prompt_tokens": usage.get("promptTokenCount", 0),
-                           "completion_tokens": usage.get("candidatesTokenCount", 0)},
+                metadata={
+                    "prompt_tokens": usage.get("promptTokenCount", 0),
+                    "completion_tokens": usage.get("candidatesTokenCount", 0),
+                },
             )
 
         except Exception as e:

@@ -81,7 +81,10 @@ class SubAgent:
             else:
                 # OpenAI-compatible path
                 messages = [
-                    {"role": "system", "content": "You are a helpful research and analysis assistant. Be thorough and concise."},
+                    {
+                        "role": "system",
+                        "content": "You are a helpful research and analysis assistant. Be thorough and concise.",
+                    },
                     {"role": "user", "content": self.prompt},
                 ]
                 self.result = self.llm.chat(messages, temperature=0.7, max_tokens=2048)
@@ -152,11 +155,14 @@ class LeadOrchestrator:
         """
         try:
             messages = [
-                {"role": "system", "content": (
-                    "You are a task decomposition assistant. Given a complex task, break it into "
-                    "3-5 specific, actionable sub-tasks that can be executed independently. "
-                    "Return ONLY a numbered list of sub-tasks, nothing else."
-                )},
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a task decomposition assistant. Given a complex task, break it into "
+                        "3-5 specific, actionable sub-tasks that can be executed independently. "
+                        "Return ONLY a numbered list of sub-tasks, nothing else."
+                    ),
+                },
                 {"role": "user", "content": f"Decompose this task: {task}"},
             ]
             response = self.llm.chat(messages, temperature=0.3, max_tokens=512)
@@ -202,7 +208,9 @@ class LeadOrchestrator:
         # Synthesis
         synthesis_prompt = (
             "Synthesize the following sub-task results into a single coherent answer:\n"
-            + "\n".join(f"[{i+1}] {r.get('result', r.get('error', ''))}" for i, r in enumerate(results))
+            + "\n".join(
+                f"[{i+1}] {r.get('result', r.get('error', ''))}" for i, r in enumerate(results)
+            )
         )
         try:
             synthesis_response = self.llm.chat(
@@ -212,12 +220,17 @@ class LeadOrchestrator:
             )
             synthesis = synthesis_response.content
         except Exception as e:
-            synthesis = f"Synthesis completed for {len(results)} sub-tasks (LLM synthesis failed: {e})"
+            synthesis = (
+                f"Synthesis completed for {len(results)} sub-tasks (LLM synthesis failed: {e})"
+            )
 
         # Store to persistent memory
         self.memory.store_verbatim(
             content=f"## Task: {task}\n\n## Synthesis\n{synthesis}\n\n## Sub-agent Results\n"
-                    + "\n".join(f"### Agent {r['agent_id']}: {r['status']}\n{r.get('result', r.get('error', ''))}" for r in results),
+            + "\n".join(
+                f"### Agent {r['agent_id']}: {r['status']}\n{r.get('result', r.get('error', ''))}"
+                for r in results
+            ),
             category="work",
             filename=f"session_{self.session_id}.md",
         )
@@ -272,7 +285,9 @@ class LeadOrchestrator:
         # Synthesis
         synthesis_prompt = (
             "Synthesize the following sub-task results into a single coherent answer:\n"
-            + "\n".join(f"[{i+1}] {r.get('result', r.get('error', ''))}" for i, r in enumerate(results))
+            + "\n".join(
+                f"[{i+1}] {r.get('result', r.get('error', ''))}" for i, r in enumerate(results)
+            )
         )
         try:
             synthesis_response = self.llm.chat(
@@ -282,12 +297,17 @@ class LeadOrchestrator:
             )
             synthesis = synthesis_response.content
         except Exception as e:
-            synthesis = f"Synthesis completed for {len(results)} sub-tasks (LLM synthesis failed: {e})"
+            synthesis = (
+                f"Synthesis completed for {len(results)} sub-tasks (LLM synthesis failed: {e})"
+            )
 
         # Store to persistent memory
         self.memory.store_verbatim(
             content=f"## Task: {task}\n\n## Synthesis\n{synthesis}\n\n## Sub-agent Results\n"
-                    + "\n".join(f"### Agent {r['agent_id']}: {r['status']}\n{r.get('result', r.get('error', ''))}" for r in results),
+            + "\n".join(
+                f"### Agent {r['agent_id']}: {r['status']}\n{r.get('result', r.get('error', ''))}"
+                for r in results
+            ),
             category="work",
             filename=f"session_{self.session_id}.md",
         )

@@ -90,9 +90,7 @@ class SessionAnalyzer:
         if turns:
             last_ts = turns[-1].get("timestamp")
             if last_ts:
-                analytics.end_time = datetime.fromisoformat(
-                    last_ts.replace("Z", "+00:00")
-                )
+                analytics.end_time = datetime.fromisoformat(last_ts.replace("Z", "+00:00"))
 
         # Finalize cache stats
         total = analytics.total_input_tokens + analytics.total_cache_read_tokens
@@ -132,9 +130,7 @@ class SessionAnalyzer:
         if t_type == "assistant":
             for tc in turn.get("tool_calls", []):
                 name = tc.get("name", "unknown")
-                t.tool_calls.append(
-                    ToolCallRecord(name=name, category=categorize_tool(name))
-                )
+                t.tool_calls.append(ToolCallRecord(name=name, category=categorize_tool(name)))
 
         return t
 
@@ -147,9 +143,7 @@ class SessionAnalyzer:
 
         for tc in t.tool_calls:
             a.tool_counts[tc.name] = a.tool_counts.get(tc.name, 0) + 1
-            a.tool_categories[tc.category] = (
-                a.tool_categories.get(tc.category, 0) + 1
-            )
+            a.tool_categories[tc.category] = a.tool_categories.get(tc.category, 0) + 1
             if tc.is_error:
                 a.error_count += 1
             if tc.category == ToolCategory.AGENT:

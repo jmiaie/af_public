@@ -64,7 +64,11 @@ class BrainHealthReport:
             "",
         ]
         for check in self.checks:
-            icon = "✅" if check.status == HealthStatus.OK else "⚠️" if check.status == HealthStatus.WARN else "❌"
+            icon = (
+                "✅"
+                if check.status == HealthStatus.OK
+                else "⚠️" if check.status == HealthStatus.WARN else "❌"
+            )
             lines.append(f"{icon} **{check.name}**: {check.message}")
             for issue in check.issues:
                 lines.append(f"   → {issue.severity.upper()}: {issue.skill}")
@@ -126,16 +130,20 @@ class BrainDoctor:
                 name="resolver_health",
                 status=HealthStatus.WARN,
                 message="RESOLVER.md not found — skill routing may not work",
-                issues=[HealthIssue(
-                    type="missing_resolver",
-                    skill="RESOLVER.md",
-                    action="Create skills/RESOLVER.md with skill routing table"
-                )],
+                issues=[
+                    HealthIssue(
+                        type="missing_resolver",
+                        skill="RESOLVER.md",
+                        action="Create skills/RESOLVER.md with skill routing table",
+                    )
+                ],
             )
 
         # Count skill references in resolver
         content = resolver.read_text()
-        skill_refs = [line.strip() for line in content.split("\n") if "skills/" in line and ".md" in line]
+        skill_refs = [
+            line.strip() for line in content.split("\n") if "skills/" in line and ".md" in line
+        ]
         skill_count = len(set(skill_refs))
 
         if skill_count == 0:
@@ -143,11 +151,13 @@ class BrainDoctor:
                 name="resolver_health",
                 status=HealthStatus.WARN,
                 message="No skills referenced in RESOLVER.md",
-                issues=[HealthIssue(
-                    type="empty_resolver",
-                    skill="RESOLVER.md",
-                    action="Add skill routing entries to RESOLVER.md"
-                )],
+                issues=[
+                    HealthIssue(
+                        type="empty_resolver",
+                        skill="RESOLVER.md",
+                        action="Add skill routing entries to RESOLVER.md",
+                    )
+                ],
             )
 
         return HealthCheck(
@@ -165,8 +175,11 @@ class BrainDoctor:
                 message="skills/ directory not found",
             )
 
-        skill_dirs = [d for d in self.skills_dir.iterdir()
-                      if d.is_dir() and not d.name.startswith("_") and not d.name.startswith(".")]
+        skill_dirs = [
+            d
+            for d in self.skills_dir.iterdir()
+            if d.is_dir() and not d.name.startswith("_") and not d.name.startswith(".")
+        ]
 
         passing = 0
         failing: list[str] = []
@@ -203,11 +216,14 @@ class BrainDoctor:
                 name="skill_conformance",
                 status=HealthStatus.WARN,
                 message=f"{passing}/{passing+len(failing)} skills pass. Failing: {', '.join(failing[:5])}",
-                issues=[HealthIssue(
-                    type="conformance_error",
-                    skill=s,
-                    action="Add required frontmatter (name, description) to SKILL.md"
-                ) for s in failing[:5]],
+                issues=[
+                    HealthIssue(
+                        type="conformance_error",
+                        skill=s,
+                        action="Add required frontmatter (name, description) to SKILL.md",
+                    )
+                    for s in failing[:5]
+                ],
             )
 
         return HealthCheck(
@@ -231,14 +247,17 @@ class BrainDoctor:
                 name="embeddings",
                 status=HealthStatus.WARN,
                 message="No semantic index found — run SemanticMemory.build_index()",
-                issues=[HealthIssue(
-                    type="no_embeddings",
-                    skill="SemanticMemory",
-                    action="Call semantic.build_index() to generate embeddings for vault content"
-                )],
+                issues=[
+                    HealthIssue(
+                        type="no_embeddings",
+                        skill="SemanticMemory",
+                        action="Call semantic.build_index() to generate embeddings for vault content",
+                    )
+                ],
             )
 
         import json
+
         try:
             with open(index_path) as f:
                 index = json.load(f)
@@ -279,7 +298,9 @@ class BrainDoctor:
                     continue  # Skip external links
                 # Check internal links
                 link_path = (md_file.parent / link).resolve()
-                if not link_path.exists() and not self.vault_path / link.replace("#", "").split("?")[0].strip("/"):
+                if not link_path.exists() and not self.vault_path / link.replace("#", "").split(
+                    "?"
+                )[0].strip("/"):
                     dead_links.append(f"{md_file.name} → {link}")
 
         if dead_links:
@@ -287,11 +308,12 @@ class BrainDoctor:
                 name="link_integrity",
                 status=HealthStatus.WARN,
                 message=f"{len(dead_links)} dead link(s) found",
-                issues=[HealthIssue(
-                    type="dead_link",
-                    skill=link,
-                    action=f"Fix or remove broken link in {md}"
-                ) for md, link in [(d.split(" → ")[0], d.split(" → ")[1]) for d in dead_links[:5]]],
+                issues=[
+                    HealthIssue(
+                        type="dead_link", skill=link, action=f"Fix or remove broken link in {md}"
+                    )
+                    for md, link in [(d.split(" → ")[0], d.split(" → ")[1]) for d in dead_links[:5]]
+                ],
             )
 
         return HealthCheck(
@@ -317,11 +339,14 @@ class BrainDoctor:
                 name="vault_structure",
                 status=HealthStatus.WARN,
                 message=f"Missing directories: {', '.join(missing)}",
-                issues=[HealthIssue(
-                    type="missing_directory",
-                    skill=d,
-                    action=f"Create vault/{d}/ directory for brain organization"
-                ) for d in missing],
+                issues=[
+                    HealthIssue(
+                        type="missing_directory",
+                        skill=d,
+                        action=f"Create vault/{d}/ directory for brain organization",
+                    )
+                    for d in missing
+                ],
             )
 
         return HealthCheck(
@@ -331,6 +356,8 @@ class BrainDoctor:
         )
 
 
-def run_doctor(skills_dir: str, vault_path: str | None = None, json_output: bool = False) -> BrainHealthReport:
+def run_doctor(
+    skills_dir: str, vault_path: str | None = None, json_output: bool = False
+) -> BrainHealthReport:
     doctor = BrainDoctor(skills_dir, vault_path)
     return doctor.run(json_output)

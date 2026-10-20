@@ -11,12 +11,13 @@ IMPORTANT: Runs in parallel. NEVER blocks the main response.
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Optional, Any, cast
+from typing import Any, Optional, cast
 
 
 @dataclass
 class SignalSummary:
     """One-line summary of what was captured this cycle."""
+
     ideas: int = 0
     entities: int = 0
     facts: int = 0
@@ -28,6 +29,7 @@ class SignalSummary:
 @dataclass
 class SignalCapture:
     """Raw capture from one signal detection cycle."""
+
     # Original thinking
     original_thinking: list[str] = field(default_factory=list)
     # Entity mentions
@@ -60,9 +62,22 @@ class SignalDetector:
 
     # Operational patterns — skip signal detection for purely operational messages
     OPERATIONAL_PATTERNS = [
-        "ok", "thanks", "thank you", "got it", "sure", "yes",
-        "no", "nope", "do it", "go ahead", "👍", "✅",
-        "nevermind", "never mind", "cancel", "never mind",
+        "ok",
+        "thanks",
+        "thank you",
+        "got it",
+        "sure",
+        "yes",
+        "no",
+        "nope",
+        "do it",
+        "go ahead",
+        "👍",
+        "✅",
+        "nevermind",
+        "never mind",
+        "cancel",
+        "never mind",
     ]
 
     def __init__(
@@ -146,11 +161,21 @@ class SignalDetector:
 
         # Heuristic triggers for original thinking
         thinking_triggers = [
-            "i think", "i believe", "my thesis", "my theory",
-            "my observation", "i suspect", "it seems to me",
-            "i've been wondering", "i wonder if", "what if",
-            "my hunch", "i feel like", "i'd argue",
-            "the pattern i'm seeing", "it occurs to me",
+            "i think",
+            "i believe",
+            "my thesis",
+            "my theory",
+            "my observation",
+            "i suspect",
+            "it seems to me",
+            "i've been wondering",
+            "i wonder if",
+            "what if",
+            "my hunch",
+            "i feel like",
+            "i'd argue",
+            "the pattern i'm seeing",
+            "it occurs to me",
         ]
 
         msg_lower = message.lower()
@@ -158,7 +183,7 @@ class SignalDetector:
             if trigger in msg_lower:
                 idx = msg_lower.find(trigger)
                 # Extract sentence containing trigger
-                snippet = message[idx:idx+200].split(". ")[0][:200]
+                snippet = message[idx : idx + 200].split(". ")[0][:200]
                 if snippet and len(snippet) > 10:
                     ideas.append(snippet.strip())
 
@@ -168,10 +193,11 @@ class SignalDetector:
         """Extract person names. Placeholder — wire to NER/LLM for production."""
         # Simple regex-based extraction (names are capitalized words)
         import re
+
         # Look for title + name patterns
         patterns = [
-            r'\b(Mr|Mrs|Ms|Dr|Prof)\.?\s+[A-Z][a-z]+\s+[A-Z][a-z]+',
-            r'\b[A-Z][a-z]+\s+[A-Z][a-z]+\b',
+            r"\b(Mr|Mrs|Ms|Dr|Prof)\.?\s+[A-Z][a-z]+\s+[A-Z][a-z]+",
+            r"\b[A-Z][a-z]+\s+[A-Z][a-z]+\b",
         ]
         names = []
         for pattern in patterns:
@@ -182,12 +208,28 @@ class SignalDetector:
     def _extract_companies(self, message: str) -> list[str]:
         """Extract company names. Uses INC/LLC/Ltd/corp suffixes + known patterns."""
         import re
+
         # Company suffixes
-        pattern = r'\b[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*\s+(?:Inc|LLC|Ltd|Corp|Corporation|Holdings|Partners|Group|Ventures|Capital)\b'
+        pattern = r"\b[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*\s+(?:Inc|LLC|Ltd|Corp|Corporation|Holdings|Partners|Group|Ventures|Capital)\b"
         matches = re.findall(pattern, message)
         # Also known tech companies
-        tech = ["Apple", "Google", "Microsoft", "Meta", "Amazon", "Tesla", "OpenAI", "Anthropic",
-                "NVIDIA", "Stripe", "Shopify", "Notion", "Figma", "Linear", "Vercel"]
+        tech = [
+            "Apple",
+            "Google",
+            "Microsoft",
+            "Meta",
+            "Amazon",
+            "Tesla",
+            "OpenAI",
+            "Anthropic",
+            "NVIDIA",
+            "Stripe",
+            "Shopify",
+            "Notion",
+            "Figma",
+            "Linear",
+            "Vercel",
+        ]
         for co in tech:
             if co in message and co not in matches:
                 matches.append(co)
@@ -197,14 +239,21 @@ class SignalDetector:
         """Extract concept/framework mentions."""
         concepts = []
         concept_triggers = [
-            "the concept of", "the idea that", "pattern", "framework",
-            "model", "theory", "thesis", "strategy", "principle",
+            "the concept of",
+            "the idea that",
+            "pattern",
+            "framework",
+            "model",
+            "theory",
+            "thesis",
+            "strategy",
+            "principle",
         ]
         msg_lower = message.lower()
         for trigger in concept_triggers:
             if trigger in msg_lower:
                 idx = msg_lower.find(trigger)
-                snippet = message[idx:idx+100].split(".")[0][:100].strip()
+                snippet = message[idx : idx + 100].split(".")[0][:100].strip()
                 if snippet:
                     concepts.append(snippet)
         return concepts[:3]
@@ -273,6 +322,7 @@ class SignalDetector:
 
     def _slugify(self, text: str) -> str:
         import re
+
         text = text.lower().strip()
         text = re.sub(r"[^a-z0-9\s-]", "", text)
         text = re.sub(r"[\s_]+", "-", text)
@@ -289,6 +339,5 @@ class SignalDetector:
             paths.append(f"entities: {', '.join(summary.entity_paths[:2])}")
         return (
             f"Signals: {summary.ideas} ideas, {summary.entities} entities, "
-            f"{summary.facts} facts"
-            + (f" ({', '.join(paths)})" if paths else "")
+            f"{summary.facts} facts" + (f" ({', '.join(paths)})" if paths else "")
         )

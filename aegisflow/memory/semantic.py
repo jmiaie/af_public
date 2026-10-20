@@ -30,6 +30,7 @@ def _get_encoder() -> Any:
     if _st_encoder is None:
         logger.info(f"Loading embedding model: {_st_model_name}")
         from sentence_transformers import SentenceTransformer  # type: ignore[import-not-found]
+
         _st_encoder = SentenceTransformer(_st_model_name)
         logger.info("Embedding model loaded")
     return _st_encoder
@@ -38,6 +39,7 @@ def _get_encoder() -> Any:
 @dataclass
 class MemoryChunk:
     """A stored memory entry with its embedding."""
+
     chunk_id: str
     content: str
     category: str
@@ -131,6 +133,7 @@ class SemanticMemory:
     def _cosine_sim(self, a: List[float], b: List[float]) -> float:
         """Compute cosine similarity between two vectors."""
         import math
+
         dot = sum(x * y for x, y in zip(a, b))
         norm_a = math.sqrt(sum(x * x for x in a))
         norm_b = math.sqrt(sum(y * y for y in b))
@@ -263,15 +266,17 @@ class SemanticMemory:
         scored.sort(key=lambda x: x[1], reverse=True)
         results = []
         for chunk, score in scored[:top_k]:
-            results.append({
-                "chunk_id": chunk.chunk_id,
-                "content": chunk.content,
-                "category": chunk.category,
-                "filename": chunk.filename,
-                "score": round(score, 4),
-                "created_at": chunk.created_at,
-                "metadata": chunk.metadata,
-            })
+            results.append(
+                {
+                    "chunk_id": chunk.chunk_id,
+                    "content": chunk.content,
+                    "category": chunk.category,
+                    "filename": chunk.filename,
+                    "score": round(score, 4),
+                    "created_at": chunk.created_at,
+                    "metadata": chunk.metadata,
+                }
+            )
 
         return results
 
@@ -286,20 +291,24 @@ class SemanticMemory:
             lines.append(f"[{r['category']}] {r['content'][:300]}... (score: {r['score']})")
         return "\n".join(lines)
 
-    def search_by_keyword(self, keyword: str, category: Optional[str] = None) -> List[Dict[str, Any]]:
+    def search_by_keyword(
+        self, keyword: str, category: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         """Simple keyword search (BM25-style) as a fallback."""
         results = []
         for chunk in self.index:
             if keyword.lower() in chunk.content.lower():
                 if category is None or chunk.category == category:
-                    results.append({
-                        "chunk_id": chunk.chunk_id,
-                        "content": chunk.content,
-                        "category": chunk.category,
-                        "filename": chunk.filename,
-                        "score": 1.0,  # keyword match = 1.0
-                        "created_at": chunk.created_at,
-                    })
+                    results.append(
+                        {
+                            "chunk_id": chunk.chunk_id,
+                            "content": chunk.content,
+                            "category": chunk.category,
+                            "filename": chunk.filename,
+                            "score": 1.0,  # keyword match = 1.0
+                            "created_at": chunk.created_at,
+                        }
+                    )
         return results[:10]
 
     def stats(self) -> Dict[str, Any]:
@@ -322,6 +331,7 @@ class SemanticMemory:
         self.index = []
         self._save_index()
         import shutil
+
         for cat in ["brain", "work", "org", "perf"]:
             p = self.vault_path / cat
             if p.exists():

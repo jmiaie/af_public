@@ -77,8 +77,7 @@ class TestPricing:
 
     def test_estimate_cost_from_dict(self):
         cost = estimate_cost_from_dict(
-            "claude-sonnet-4-6",
-            {"input_tokens": 1_000_000, "output_tokens": 0}
+            "claude-sonnet-4-6", {"input_tokens": 1_000_000, "output_tokens": 0}
         )
         assert cost == pytest.approx(3.00)
 
@@ -87,8 +86,14 @@ class TestPricing:
 
 
 class TestSessionAnalyzer:
-    def _make_turn(self, type_="assistant", model="claude-sonnet-4-6",
-                   input_tokens=100, output_tokens=50, tool_calls=None):
+    def _make_turn(
+        self,
+        type_="assistant",
+        model="claude-sonnet-4-6",
+        input_tokens=100,
+        output_tokens=50,
+        tool_calls=None,
+    ):
         turn = {
             "type": type_,
             "model": model,
@@ -114,11 +119,13 @@ class TestSessionAnalyzer:
     def test_tool_counting(self):
         analyzer = SessionAnalyzer()
         turns = [
-            self._make_turn(tool_calls=[
-                {"name": "Read"},
-                {"name": "Read"},
-                {"name": "Bash"},
-            ]),
+            self._make_turn(
+                tool_calls=[
+                    {"name": "Read"},
+                    {"name": "Read"},
+                    {"name": "Bash"},
+                ]
+            ),
         ]
         result = analyzer.analyze("test", turns)
         assert result.tool_counts.get("Read") == 2
@@ -150,8 +157,12 @@ class TestSessionAnalyzer:
 class TestMTB:
     def test_record_and_total(self):
         mtb = MTB()
-        mtb.record(model="nvidia/meta/llama-3.1-70b", input_tokens=1000,
-                   output_tokens=500, estimated_cost=0.01)
+        mtb.record(
+            model="nvidia/meta/llama-3.1-70b",
+            input_tokens=1000,
+            output_tokens=500,
+            estimated_cost=0.01,
+        )
         assert mtb.total_cost() == pytest.approx(0.01)
 
     def test_tier_resolution(self):
@@ -164,7 +175,9 @@ class TestMTB:
     def test_by_tier(self):
         mtb = MTB()
         mtb.record(model="nvidia/x", input_tokens=100, output_tokens=50, estimated_cost=0.01)
-        mtb.record(model="gemini-2.0-flash", input_tokens=100, output_tokens=50, estimated_cost=0.005)
+        mtb.record(
+            model="gemini-2.0-flash", input_tokens=100, output_tokens=50, estimated_cost=0.005
+        )
         by_tier = mtb.by_tier()
         assert ModelTier.PRIMARY in by_tier
         assert ModelTier.SECONDARY_A in by_tier

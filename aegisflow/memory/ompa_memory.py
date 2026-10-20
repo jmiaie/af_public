@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Any, Dict, List, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
 
 from aegisflow.memory.semantic import SemanticMemory
 
@@ -92,9 +92,7 @@ class AegisFlowMemory:
     def semantic_memory(self) -> Optional[SemanticMemory]:
         """AegisFlow's native SemanticMemory as fallback when OMPA unavailable."""
         if self._semantic_memory is None:
-            self._semantic_memory = SemanticMemory(
-                vault_path=str(self.vault_path)
-            )
+            self._semantic_memory = SemanticMemory(vault_path=str(self.vault_path))
         return self._semantic_memory
 
     # -------------------------------------------------------------------------
