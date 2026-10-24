@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, cast
 
 from aegisflow.llm.adapters import AgenticResponse
+from aegisflow.llm.http import require_http_url
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +71,9 @@ class GeminiLLM:
         req = urllib.request.Request(url, data=body, headers=headers, method="POST")
 
         try:
-            with urllib.request.urlopen(req, timeout=self.config.timeout) as resp:
+            # B310: only http(s) URLs reach urlopen; see aegisflow.llm.http.
+            require_http_url(req)
+            with urllib.request.urlopen(req, timeout=self.config.timeout) as resp:  # nosec B310
                 return cast(Dict[str, Any], json.loads(resp.read()))
         except urllib.error.HTTPError as e:
             error_body = e.read().decode("utf-8", errors="replace")
@@ -214,7 +217,9 @@ class GeminiLLM:
         url = f"{self.config.base_url}/models?key={self.config.api_key}"
         req = urllib.request.Request(url, headers={"Content-Type": "application/json"})
 
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        # B310: only http(s) URLs reach urlopen; see aegisflow.llm.http.
+        require_http_url(req)
+        with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310
             data = json.loads(resp.read())
 
         models = data.get("models", [])
@@ -285,7 +290,9 @@ class GeminiOpenAIProxy:
         )
 
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+            # B310: only http(s) URLs reach urlopen; see aegisflow.llm.http.
+            require_http_url(req)
+            with urllib.request.urlopen(req, timeout=self.timeout) as resp:  # nosec B310
                 data = json.loads(resp.read())
 
             choice = data["choices"][0]

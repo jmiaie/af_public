@@ -20,6 +20,7 @@ from aegisflow.core.errors import (
     LLMRateLimitError,
     LLMTimeoutError,
 )
+from aegisflow.llm.http import require_http_url
 
 logger = logging.getLogger(__name__)
 
@@ -121,6 +122,10 @@ class OpenAICompatibleLLM:
 
         body.update(kwargs)
 
+        # B310: only http(s) URLs reach urlopen; see aegisflow.llm.http.
+        # Checked outside the try so a bad base_url surfaces as ValueError.
+        require_http_url(url)
+
         try:
             req = urllib.request.Request(
                 url,
@@ -128,7 +133,7 @@ class OpenAICompatibleLLM:
                 headers=headers,
                 method="POST",
             )
-            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+            with urllib.request.urlopen(req, timeout=self.timeout) as resp:  # nosec B310
                 data = _json.loads(resp.read())
 
             choice = data["choices"][0]

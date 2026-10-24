@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `sandbox`: commands no longer go through a host shell (`shell=True` removed); `execute` takes an argv list or a `shlex.split` string. **Breaking:** pipes, `&&`, redirects and globs in string commands are no longer interpreted.
 - `NamespaceSandbox` raises `SandboxUnavailableError` instead of silently running on the host when `unshare` is unusable; fixed invalid `unshare` flags.
 - Timeouts kill only the command's own process group (`start_new_session` + `os.killpg`) instead of `pkill -P <our pid>`.
+- `llm`: every provider (`OpenAICompatibleLLM`, Gemini, NVIDIA, Ollama) now rejects URLs whose scheme is not `http`/`https` (e.g. `file://`) before calling `urlopen` (bandit B310). Such a URL raises `ValueError`; `OllamaLLM.list_models`/`is_available` return `[]`/`False`.
+- `benchmarks/run_all`: the benchmark workspace is a private `tempfile.mkdtemp` directory instead of the fixed `/tmp/af_bench` (bandit B108); `psutil` is imported only when system stats are collected.
 
 ### Changed
 - Docs: `LocalSandbox` described as a local executor, not isolated; README states that `MemoryVault.retrieve` is a placeholder, `KnowledgeGraph` is an unpersisted in-memory list, and the `add_triple` benchmark measures `list.append`.
