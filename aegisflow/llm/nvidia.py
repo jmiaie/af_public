@@ -11,6 +11,7 @@ import os
 from typing import Any, Dict, List, Optional
 
 from aegisflow.llm.adapters import AgenticResponse
+from aegisflow.llm.http import require_http_url
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +76,9 @@ class NVIDIAllm:
         )
 
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+            # B310: only http(s) URLs reach urlopen; see aegisflow.llm.http.
+            require_http_url(req)
+            with urllib.request.urlopen(req, timeout=self.timeout) as resp:  # nosec B310
                 data = json.loads(resp.read())
 
             choice = data["choices"][0]
@@ -155,7 +158,9 @@ class LocalNVIDIABridge:
         )
 
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+            # B310: only http(s) URLs reach urlopen; see aegisflow.llm.http.
+            require_http_url(req)
+            with urllib.request.urlopen(req, timeout=self.timeout) as resp:  # nosec B310
                 data = json.loads(resp.read())
 
             choice = data["choices"][0]

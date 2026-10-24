@@ -10,6 +10,7 @@ import logging
 from typing import Any, Dict, List, Optional, cast
 
 from aegisflow.llm.adapters import AgenticResponse
+from aegisflow.llm.http import require_http_url
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +78,9 @@ class OllamaLLM:
         )
 
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+            # B310: only http(s) URLs reach urlopen; see aegisflow.llm.http.
+            require_http_url(req)
+            with urllib.request.urlopen(req, timeout=self.timeout) as resp:  # nosec B310
                 data = json.loads(resp.read())
 
             content = data.get("message", {}).get("content", "")
@@ -126,7 +129,9 @@ class OllamaLLM:
                 f"{self._api}/tags",
                 headers={"Content-Type": "application/json"},
             )
-            with urllib.request.urlopen(req, timeout=10) as resp:
+            # B310: only http(s) URLs reach urlopen; see aegisflow.llm.http.
+            require_http_url(req)
+            with urllib.request.urlopen(req, timeout=10) as resp:  # nosec B310
                 data = json.loads(resp.read())
             return cast(List[Dict[str, Any]], data.get("models", []))
         except Exception as e:
@@ -139,7 +144,9 @@ class OllamaLLM:
 
         try:
             req = urllib.request.Request(f"{self.base_url}/", method="GET")
-            with urllib.request.urlopen(req, timeout=5) as resp:
+            # B310: only http(s) URLs reach urlopen; see aegisflow.llm.http.
+            require_http_url(req)
+            with urllib.request.urlopen(req, timeout=5) as resp:  # nosec B310
                 return bool(resp.status == 200)
         except Exception:
             return False

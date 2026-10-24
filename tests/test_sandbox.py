@@ -233,9 +233,17 @@ def _alive(pid: int) -> bool:
         os.kill(pid, 0)
     except ProcessLookupError:
         return False
-    # Zombies count as dead.
+    # Zombies count as dead. Linux exposes the state in /proc; macOS and the
+    # BSDs have no /proc, so ask `ps` instead of assuming the pid is alive.
     try:
         with open(f"/proc/{pid}/stat") as f:
             return f.read().split()[2] != "Z"
     except OSError:
+        pass
+    try:
+        out = subprocess.run(
+            ["ps", "-o", "stat=", "-p", str(pid)], capture_output=True, text=True, timeout=5
+        ).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
         return True
+    return bool(out) and not out.startswith("Z")
